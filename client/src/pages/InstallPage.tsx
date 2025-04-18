@@ -11,11 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ModFileList from '@/components/ModFileList';
 import { useToast } from '@/hooks/use-toast';
 import { gameService } from '@/lib/gameService';
-import { moddbService } from '@/lib/moddbService';
 import { IMod, IModFile } from '@shared/schema';
 
 const formSchema = z.object({
@@ -38,15 +36,8 @@ export const InstallPage: React.FC = () => {
   const [files, setFiles] = useState<IModFile[]>([]);
   
   // Fetch doom versions
-  const { data: versions } = useQuery({ 
+  const { data: versions = [] } = useQuery<any[]>({ 
     queryKey: ['/api/versions'],
-  });
-  
-  // Search ModDB for mods to install
-  const { data: searchResults, isLoading: searchLoading } = useQuery({
-    queryKey: ['/api/moddb/search', searchQuery],
-    queryFn: () => moddbService.searchMods(searchQuery),
-    enabled: searchQuery.length > 0,
   });
   
   // Setup form
@@ -92,14 +83,6 @@ export const InstallPage: React.FC = () => {
     setSearchQuery(query);
   };
   
-  const handleInstallModDB = (modId: number, name: string) => {
-    form.setValue('title', name);
-    form.setValue('moddbId', modId.toString());
-    
-    // Scroll to manual form
-    document.getElementById('manual-install')?.scrollIntoView({ behavior: 'smooth' });
-  };
-  
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     const mod: Omit<IMod, 'id'> = {
       title: data.title,
@@ -134,237 +117,174 @@ export const InstallPage: React.FC = () => {
         <Header onSearch={handleSearch} />
         
         <div className="flex-1 overflow-y-auto p-4">
-          <Tabs defaultValue="moddb" className="w-full">
-            <TabsList className="mb-4 bg-[#162b3d]">
-              <TabsTrigger value="moddb" className="data-[state=active]:bg-[#0c1c2a]">ModDB Installation</TabsTrigger>
-              <TabsTrigger value="manual" className="data-[state=active]:bg-[#0c1c2a]">Manual Installation</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="moddb">
-              <Card className="bg-[#162b3d] border-[#262626] mb-6">
-                <CardHeader>
-                  <CardTitle>Install From ModDB</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4">Search for a mod on ModDB using the search bar at the top, then click on the mod you want to install.</p>
-                  
-                  {searchQuery && (
-                    <div>
-                      <h3 className="text-xl font-mono mb-3">Search Results</h3>
+          <Card className="bg-[#162b3d] border-[#262626] mb-6">
+            <CardHeader>
+              <CardTitle>Install New Mod</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Mod Title</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter mod title" 
+                                className="bg-[#0c1c2a] border-[#262626]" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
-                      {searchLoading ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Array(4).fill(0).map((_, i) => (
-                            <Card key={i} className="h-24 bg-[#1c1c1c] animate-pulse" />
-                          ))}
-                        </div>
-                      ) : searchResults?.length === 0 ? (
-                        <p className="text-[#e6e6e6]">No mods found matching your search.</p>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {searchResults?.map(mod => (
-                            <Card key={mod.id} className="bg-[#1c1c1c] border-[#262626] hover:bg-[#262626] transition-colors">
-                              <CardContent className="flex items-center p-4">
-                                <div className="w-16 h-16 mr-4 overflow-hidden rounded">
-                                  <img 
-                                    src={mod.thumbnail || "https://via.placeholder.com/64.png?text=Mod"} 
-                                    alt={mod.name} 
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className="font-mono text-lg">{mod.name}</h4>
-                                  <p className="text-xs text-[#e6e6e6] line-clamp-1">{mod.summary}</p>
-                                </div>
-                                <Button 
-                                  size="sm"
-                                  className="bg-[#d41c1c] hover:bg-[#b21616] ml-2"
-                                  onClick={() => handleInstallModDB(mod.id, mod.name)}
-                                >
-                                  Install
-                                </Button>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description (Optional)</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Enter mod description" 
+                                className="bg-[#0c1c2a] border-[#262626]" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="screenshotPath"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Screenshot URL (Optional)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter screenshot URL" 
+                                className="bg-[#0c1c2a] border-[#262626]" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="manual" id="manual-install">
-              <Card className="bg-[#162b3d] border-[#262626]">
-                <CardHeader>
-                  <CardTitle>Manual Mod Installation</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="title"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Mod Title</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="Enter mod title" 
-                                    className="bg-[#0c1c2a] border-[#262626]" 
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Description (Optional)</FormLabel>
-                                <FormControl>
-                                  <Textarea 
-                                    placeholder="Enter mod description" 
-                                    className="bg-[#0c1c2a] border-[#262626]" 
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="screenshotPath"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Screenshot URL (Optional)</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="Enter screenshot URL" 
-                                    className="bg-[#0c1c2a] border-[#262626]" 
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        
-                        <div className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="doomVersionId"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Base Game</FormLabel>
-                                <Select 
-                                  onValueChange={field.onChange} 
-                                  value={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger className="bg-[#0c1c2a] border-[#262626]">
-                                      <SelectValue placeholder="Select Doom Version" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent className="bg-[#162b3d] border-[#262626] text-white">
-                                    {versions?.map(version => (
-                                      <SelectItem key={version.id} value={version.id.toString()}>
-                                        {version.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="sourcePort"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Source Port</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="GZDoom" 
-                                    className="bg-[#0c1c2a] border-[#262626]" 
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="saveDirectory"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Save Directory (Optional)</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="~/.config/gzdoom/saves/" 
-                                    className="bg-[#0c1c2a] border-[#262626]" 
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={form.control}
-                            name="launchParameters"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Launch Parameters (Optional)</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="-skill 4 -warp 01" 
-                                    className="bg-[#0c1c2a] border-[#262626]" 
-                                    {...field} 
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
+                    
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="doomVersionId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Base Game</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="bg-[#0c1c2a] border-[#262626]">
+                                  <SelectValue placeholder="Select Doom Version" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="bg-[#162b3d] border-[#262626] text-white">
+                                {versions.map((version) => (
+                                  <SelectItem key={version.id} value={version.id.toString()}>
+                                    {version.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
-                      <div>
-                        <h3 className="text-lg font-mono mb-2">Mod Files</h3>
-                        <p className="text-sm text-[#e6e6e6] mb-2">Add the mod files in the order they should be loaded.</p>
-                        <ModFileList files={files} onChange={setFiles} />
-                      </div>
+                      <FormField
+                        control={form.control}
+                        name="sourcePort"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Source Port</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="GZDoom" 
+                                className="bg-[#0c1c2a] border-[#262626]" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
-                      <div className="flex justify-end">
-                        <Button 
-                          type="submit" 
-                          className="bg-[#d41c1c] hover:bg-[#b21616]"
-                          disabled={createMutation.isPending}
-                        >
-                          {createMutation.isPending ? 'Installing...' : 'Install Mod'}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                      <FormField
+                        control={form.control}
+                        name="saveDirectory"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Save Directory (Optional)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="~/.config/gzdoom/saves/" 
+                                className="bg-[#0c1c2a] border-[#262626]" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="launchParameters"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Launch Parameters (Optional)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="-skill 4 -warp 01" 
+                                className="bg-[#0c1c2a] border-[#262626]" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-mono mb-2">Mod Files</h3>
+                    <p className="text-sm text-[#e6e6e6] mb-2">Add the mod files in the order they should be loaded.</p>
+                    <ModFileList files={files} onChange={setFiles} />
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      className="bg-[#d41c1c] hover:bg-[#b21616]"
+                      disabled={createMutation.isPending}
+                    >
+                      {createMutation.isPending ? 'Installing...' : 'Install Mod'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
