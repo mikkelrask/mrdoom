@@ -63,21 +63,22 @@ export const GameCard: React.FC<GameCardProps> = ({ mod, doomVersion, onSettings
           }}
         />
         {/* Dark gradient overlay - always visible */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent pointer-events-none"></div>
         
-        {/* Game title at bottom */}
-        <div className="absolute inset-x-0 bottom-0 p-3 transform transition-transform duration-300 ease-in-out group-hover:translate-y-[-80px]">
+        {/* Game title and icon container - starts at the bottom */}
+        <div className="absolute inset-x-0 bottom-0 px-3 py-3 flex justify-between items-center 
+                      transform transition-transform duration-300 group-hover:translate-y-[-60px] z-10">
+          {/* Game title */}
           <h3 className="text-white font-mono text-lg font-bold">{mod.title}</h3>
-        </div>
-        
-        {/* Version icon at bottom right */}
-        <div className="absolute bottom-3 right-3 transition-transform duration-300 ease-in-out group-hover:translate-y-[-6px]">
+          
+          {/* Version icon */}
           <DoomVersionIcon version={doomVersion.slug} className="w-7 h-7" />
         </div>
         
         {/* Description panel that appears on hover */}
-        <div className="absolute inset-0 pt-20 pb-16 px-4 bg-black/60 opacity-0 group-hover:opacity-100 
-                      transition-opacity duration-300 flex items-center justify-center">
+        <div className="absolute inset-0 px-4 flex items-center justify-center 
+                      bg-black/60 opacity-0 group-hover:opacity-100 
+                      transition-opacity duration-300 pt-24 pb-16">
           <p className="text-white text-sm">{truncatedDescription}</p>
         </div>
       </div>
