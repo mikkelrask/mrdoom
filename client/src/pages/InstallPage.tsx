@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useLocation } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +31,7 @@ const formSchema = z.object({
 export const InstallPage: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   const [activeVersion, setActiveVersion] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +67,8 @@ export const InstallPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mods'] });
       form.reset();
       setFiles([]);
+      // Navigate to the Games page
+      setLocation('/');
     },
     onError: (error) => {
       toast({

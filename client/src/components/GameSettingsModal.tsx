@@ -157,16 +157,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-[#162b3d] text-white border-[#262626] max-w-4xl">
         <DialogHeader>
-          <div className="flex justify-between items-center">
-            <DialogTitle className="text-2xl font-mono font-bold">{mod?.title}</DialogTitle>
-            <Button 
-              variant="ghost" 
-              onClick={onClose} 
-              className="text-[#e6e6e6] hover:text-white"
-            >
-              <X className="h-6 w-6" />
-            </Button>
-          </div>
+          <DialogTitle className="text-2xl font-mono font-bold">{mod?.title}</DialogTitle>
         </DialogHeader>
         
         {isLoading ? (
@@ -272,17 +263,10 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                 <Button 
                   variant="outline" 
                   onClick={handleDelete} 
-                  className="mr-2 bg-[#0c1c2a] hover:bg-[#162b3d] text-white border-[#262626]"
+                  className="bg-[#0c1c2a] hover:bg-[#162b3d] text-white border-[#262626]"
                   disabled={deleteMutation.isPending}
                 >
                   Delete Instance
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleUpdateFromModDB} 
-                  className="bg-[#0c1c2a] hover:bg-[#162b3d] text-white border-[#262626]"
-                >
-                  Update from ModDB
                 </Button>
               </div>
               
