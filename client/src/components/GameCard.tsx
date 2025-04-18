@@ -66,8 +66,8 @@ export const GameCard: React.FC<GameCardProps> = ({ mod, doomVersion, onSettings
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent pointer-events-none"></div>
         
         {/* Game title and icon container - starts at the bottom */}
-        <div className="absolute inset-x-0 bottom-0 px-3 py-3 flex justify-between items-center 
-                      transform transition-transform duration-300 group-hover:translate-y-[-60px] z-10">
+        <div className="absolute inset-x-0 bottom-0 px-3 flex justify-between items-center 
+                      transform transition-transform duration-300 group-hover:translate-y-[-100px] z-10">
           {/* Game title */}
           <h3 className="text-white font-mono text-lg font-bold">{mod.title}</h3>
           

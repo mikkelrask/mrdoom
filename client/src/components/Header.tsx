@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { Settings, Menu } from 'lucide-react';
+import SettingsDialog from './SettingsDialog';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -9,10 +10,19 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
   const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(searchQuery);
+  };
+  
+  const openSettings = () => {
+    setIsSettingsOpen(true);
+  };
+  
+  const closeSettings = () => {
+    setIsSettingsOpen(false);
   };
   
   return (
@@ -37,11 +47,14 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
             GAMES
           </span>
         </Link>
-        <Link href="/moddb">
-          <span className={`nav-tab ${location === '/moddb' ? 'active' : ''} cursor-pointer`}>
-            MODDB
-          </span>
-        </Link>
+        <a 
+          href="https://www.moddb.com/games/doom" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="nav-tab cursor-pointer"
+        >
+          MODDB
+        </a>
         <Link href="/install">
           <span className={`nav-tab ${location === '/install' ? 'active' : ''} cursor-pointer`}>
             INSTALL
@@ -58,13 +71,19 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
           <span className="text-white font-mono ml-2 mr-1">ROBOTEARS</span>
           <span className="text-xs text-[#e6e6e6]">LVL 71</span>
         </div>
-        <button className="w-8 h-8 bg-[#0c1c2a] rounded flex items-center justify-center hover:bg-[#162b3d]">
+        <button 
+          className="w-8 h-8 bg-[#0c1c2a] rounded flex items-center justify-center hover:bg-[#162b3d]"
+          onClick={openSettings}
+        >
           <Settings className="h-5 w-5" />
         </button>
         <button className="w-8 h-8 bg-[#0c1c2a] rounded flex items-center justify-center hover:bg-[#162b3d]">
           <Menu className="h-5 w-5" />
         </button>
       </div>
+      
+      {/* Settings Dialog */}
+      <SettingsDialog isOpen={isSettingsOpen} onClose={closeSettings} />
     </header>
   );
 };
