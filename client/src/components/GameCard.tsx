@@ -53,7 +53,7 @@ export const GameCard: React.FC<GameCardProps> = ({ mod, doomVersion, onSettings
   return (
     <div className="game-card group cursor-pointer relative">
       {/* Using aspect-ratio to enforce 16:9 ratio for screenshots */}
-      <div className="aspect-w-16 overflow-hidden relative">
+      <div className="aspect-w-16 aspect-h-9 overflow-hidden relative">
         <img 
           src={mod.screenshotPath || imagePlaceholder} 
           alt={mod.title} 
@@ -63,28 +63,28 @@ export const GameCard: React.FC<GameCardProps> = ({ mod, doomVersion, onSettings
           }}
         />
         {/* Dark gradient overlay - always visible */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
         
-        {/* Game title - starts at bottom, moves to top on hover */}
-        <div className="absolute left-0 right-0 bottom-0 p-3 transform transition-all duration-300 ease-in-out group-hover:translate-y-[-90%]">
+        {/* Game title at bottom */}
+        <div className="absolute inset-x-0 bottom-0 p-3 transform transition-transform duration-300 ease-in-out group-hover:translate-y-[-80px]">
           <h3 className="text-white font-mono text-lg font-bold">{mod.title}</h3>
         </div>
         
-        {/* Version icon - stays at bottom-right, only moves up slightly on hover */}
-        <div className="absolute bottom-3 right-3 transition-all duration-300 ease-in-out group-hover:translate-y-[-10px]">
+        {/* Version icon at bottom right */}
+        <div className="absolute bottom-3 right-3 transition-transform duration-300 ease-in-out group-hover:translate-y-[-6px]">
           <DoomVersionIcon version={doomVersion.slug} className="w-7 h-7" />
         </div>
         
         {/* Description panel that appears on hover */}
-        <div className="absolute inset-0 pt-16 pb-12 px-4 bg-black/60 opacity-0 group-hover:opacity-100 
-                      transition-opacity duration-300 ease-in-out flex items-center justify-center">
+        <div className="absolute inset-0 pt-20 pb-16 px-4 bg-black/60 opacity-0 group-hover:opacity-100 
+                      transition-opacity duration-300 flex items-center justify-center">
           <p className="text-white text-sm">{truncatedDescription}</p>
         </div>
       </div>
       
       {/* Action buttons that appear on hover at the bottom */}
       <div className="absolute bottom-0 left-0 w-full opacity-0 group-hover:opacity-100 
-                    transition-all duration-300 ease-in-out bg-[rgba(12,28,42,0.85)] 
+                    transition-opacity duration-300 bg-[rgba(12,28,42,0.85)] 
                     flex items-center justify-between p-2">
         <button 
           className="px-4 py-1 text-white font-mono rounded bg-[#d41c1c] hover:bg-[#b21616] transition-colors"
