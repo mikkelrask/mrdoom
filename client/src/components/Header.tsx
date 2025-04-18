@@ -43,19 +43,19 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
       {/* Navigation */}
       <nav className="flex space-x-12 text-xl font-mono">
         <Link href="/">
-          <a className={`nav-tab ${location === '/' ? 'active' : ''}`}>
+          <span className={`nav-tab ${location === '/' ? 'active' : ''} cursor-pointer`}>
             GAMES
-          </a>
+          </span>
         </Link>
         <Link href="/moddb">
-          <a className={`nav-tab ${location === '/moddb' ? 'active' : ''}`}>
+          <span className={`nav-tab ${location === '/moddb' ? 'active' : ''} cursor-pointer`}>
             MODDB
-          </a>
+          </span>
         </Link>
         <Link href="/install">
-          <a className={`nav-tab ${location === '/install' ? 'active' : ''}`}>
+          <span className={`nav-tab ${location === '/install' ? 'active' : ''} cursor-pointer`}>
             INSTALL
-          </a>
+          </span>
         </Link>
       </nav>
       

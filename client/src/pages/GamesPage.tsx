@@ -6,7 +6,7 @@ import ViewToggle from '@/components/ViewToggle';
 import GameCard from '@/components/GameCard';
 import GameSettingsModal from '@/components/GameSettingsModal';
 import { gameService } from '@/lib/gameService';
-import { IMod } from '@shared/schema';
+import { IMod, IDoomVersion } from '@shared/schema';
 
 type ViewMode = 'grid' | 'list' | 'detail';
 
