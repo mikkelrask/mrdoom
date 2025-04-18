@@ -62,19 +62,25 @@ export const GameCard: React.FC<GameCardProps> = ({ mod, doomVersion, onSettings
             e.currentTarget.src = imagePlaceholder;
           }}
         />
+        {/* Dark gradient overlay - always visible */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
         
-        {/* Game title and version icon with transition on hover */}
-        <div className="absolute inset-x-0 bottom-0 p-3 transform transition-transform duration-200 group-hover:-translate-y-2">
-          <h3 className="text-white font-mono text-lg font-bold">{mod.title}</h3>
-          <div className="absolute bottom-3 right-3 transform transition-all duration-200 group-hover:scale-110">
+        {/* Default state: title at bottom, icon at bottom right */}
+        <div className="absolute inset-x-0 bottom-0 p-3 z-10">
+          {/* Title with transition effect */}
+          <h3 className="text-white font-mono text-lg font-bold transition-transform duration-200 group-hover:-translate-y-12">
+            {mod.title}
+          </h3>
+          
+          {/* Version icon with transition effect */}
+          <div className="absolute bottom-3 right-3 transition-transform duration-200 group-hover:translate-y-[-48px] group-hover:translate-x-[-8px]">
             <DoomVersionIcon version={doomVersion.slug} className="w-7 h-7" />
           </div>
         </div>
         
-        {/* Description that appears on hover */}
-        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center p-4">
-          <p className="text-white text-sm">{truncatedDescription}</p>
+        {/* Hover overlay with description */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-center items-center p-4 pt-8">
+          <p className="text-white text-sm text-center">{truncatedDescription}</p>
         </div>
       </div>
       
