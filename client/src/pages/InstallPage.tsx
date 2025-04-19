@@ -16,6 +16,7 @@ import ModFileList from '@/components/ModFileList';
 import { useToast } from '@/hooks/use-toast';
 import { gameService } from '@/lib/gameService';
 import { IMod, IModFile } from '@shared/schema';
+import { slugify } from '@/lib/utils'; //Import added here
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -32,16 +33,16 @@ export const InstallPage: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  
+
   const [activeVersion, setActiveVersion] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [files, setFiles] = useState<IModFile[]>([]);
-  
+
   // Fetch doom versions
   const { data: versions = [] } = useQuery<any[]>({ 
     queryKey: ['/api/versions'],
   });
-  
+
   // Setup form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -54,7 +55,7 @@ export const InstallPage: React.FC = () => {
       launchParameters: "",
     },
   });
-  
+
   // Create mod mutation
   const createMutation = useMutation({
     mutationFn: (data: { mod: Omit<IMod, 'id'>, files: Omit<IModFile, 'id' | 'modId'>[] }) => 
@@ -78,15 +79,15 @@ export const InstallPage: React.FC = () => {
       });
     }
   });
-  
+
   const handleVersionSelect = (version: string) => {
     setActiveVersion(version === activeVersion ? null : version);
   };
-  
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
-  
+
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     const mod: Omit<IMod, 'id'> = {
       title: data.title,
@@ -98,7 +99,7 @@ export const InstallPage: React.FC = () => {
       screenshotPath: data.screenshotPath,
       launchParameters: data.launchParameters,
     };
-    
+
     const fileData = files.map(file => ({
       fileName: file.fileName,
       filePath: file.filePath,
@@ -106,20 +107,20 @@ export const InstallPage: React.FC = () => {
       loadOrder: file.loadOrder,
       isRequired: file.isRequired
     }));
-    
+
     createMutation.mutate({ mod, files: fileData });
   };
-  
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar 
         activeVersion={activeVersion} 
         onVersionSelect={handleVersionSelect} 
       />
-      
+
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <Header onSearch={handleSearch} />
-        
+
         <div className="flex-1 overflow-y-auto p-4">
           <Card className="bg-[#162b3d] border-[#262626] mb-6">
             <CardHeader>
@@ -153,7 +154,7 @@ export const InstallPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="description"
@@ -171,7 +172,7 @@ export const InstallPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="screenshotPath"
@@ -190,7 +191,7 @@ export const InstallPage: React.FC = () => {
                         )}
                       />
                     </div>
-                    
+
                     <div className="space-y-4">
                       <FormField
                         control={form.control}
@@ -219,7 +220,7 @@ export const InstallPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="sourcePort"
@@ -237,7 +238,7 @@ export const InstallPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="saveDirectory"
@@ -255,7 +256,7 @@ export const InstallPage: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="launchParameters"
@@ -275,13 +276,13 @@ export const InstallPage: React.FC = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-lg font-mono mb-2">Mod Files</h3>
                     <p className="text-sm text-[#e6e6e6] mb-2">Add the mod files in the order they should be loaded.</p>
                     <ModFileList files={files} onChange={setFiles} />
                   </div>
-                  
+
                   <div className="flex justify-end">
                     <Button 
                       type="submit" 
