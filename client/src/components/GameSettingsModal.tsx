@@ -42,12 +42,14 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
   const updateMutation = useMutation({
     mutationFn: ({ id, mod, files }: { id: number, mod: Partial<IMod>, files: Omit<IModFile, 'id' | 'modId'>[] }) => 
       gameService.updateMod(id, mod, files),
-    onSuccess: () => {
+    onSuccess: (updatedMod, variables) => {
       toast({
         title: 'Success',
         description: 'Mod settings saved successfully',
       });
+      // Update both the list and the individual mod cache
       queryClient.invalidateQueries({ queryKey: ['/api/mods'] });
+      queryClient.setQueryData([`/api/mods/${variables.id}`], { mod: updatedMod, files: variables.files });
       onClose();
     },
     onError: (error) => {
