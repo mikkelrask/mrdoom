@@ -12,6 +12,7 @@ import { gameService } from '@/lib/gameService';
 import { useToast } from '@/hooks/use-toast';
 import ModFileList from './ModFileList';
 import LaunchOptions from './LaunchOptions';
+import { cn, slugify } from '@/lib/utils';
 
 interface GameSettingsModalProps {
   modId: number | null;
@@ -28,16 +29,16 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
 }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [mod, setMod] = useState<IMod | null>(null);
   const [files, setFiles] = useState<IModFile[]>([]);
-  
+
   // Fetch mod details
   const { data, isLoading } = useQuery({
     queryKey: [`/api/mods/${modId}`],
     enabled: !!modId && isOpen,
   });
-  
+
   // Update mod mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, mod, files }: { id: number, mod: Partial<IMod>, files: Omit<IModFile, 'id' | 'modId'>[] }) => 
@@ -60,7 +61,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
       });
     }
   });
-  
+
   // Delete mod mutation
   const deleteMutation = useMutation({
     mutationFn: gameService.deleteMod,
@@ -80,7 +81,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
       });
     }
   });
-  
+
   // Launch mod mutation
   const launchMutation = useMutation({
     mutationFn: gameService.launchMod,
@@ -98,7 +99,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
       });
     }
   });
-  
+
   // Initialize form state when data is loaded
   useEffect(() => {
     if (data) {
@@ -106,10 +107,10 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
       setFiles(data.files);
     }
   }, [data]);
-  
+
   const handleSave = () => {
     if (!mod || !modId) return;
-    
+
     const filesWithoutIds = files.map(f => ({
       fileName: f.fileName,
       filePath: f.filePath,
@@ -117,51 +118,51 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
       loadOrder: f.loadOrder,
       isRequired: f.isRequired
     }));
-    
+
     updateMutation.mutate({ 
       id: modId, 
       mod, 
       files: filesWithoutIds 
     });
   };
-  
+
   const handleDelete = () => {
     if (!modId) return;
     if (confirm('Are you sure you want to delete this mod?')) {
       deleteMutation.mutate(modId);
     }
   };
-  
+
   const handleLaunch = () => {
     if (!modId) return;
     launchMutation.mutate(modId);
   };
-  
+
   const handleUpdateFromModDB = () => {
     toast({
       title: 'Not implemented',
       description: 'ModDB update feature is not implemented yet',
     });
   };
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setMod(prev => prev ? { ...prev, [name]: value } : null);
   };
-  
+
   const handleSelectChange = (name: string, value: string) => {
     setMod(prev => prev ? { ...prev, [name]: value } : null);
   };
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-[#162b3d] text-white border-[#262626] max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-mono font-bold">{mod?.title}</DialogTitle>
         </DialogHeader>
-        
+
         {isLoading ? (
           <div className="p-4 text-center">Loading mod details...</div>
         ) : (
@@ -174,7 +175,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                   className="w-full h-64 object-cover rounded"
                 />
               </div>
-              
+
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label htmlFor="title">Mod Title</Label>
@@ -186,7 +187,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                     className="bg-[#0c1c2a] border-[#262626]"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="description">Description</Label>
                   <Textarea 
@@ -199,7 +200,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                   />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="text-lg font-mono mb-2">Game Configuration</h3>
@@ -222,7 +223,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="sourcePort">Source Port</Label>
                       <Input 
@@ -233,33 +234,32 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                         className="bg-[#162b3d] border-[#262626]"
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="saveDirectory">Save Directory</Label>
                       <Input 
                         id="saveDirectory" 
                         name="saveDirectory" 
-                        value={mod?.saveDirectory || ''} 
+                        value={mod?.saveDirectory || `${process.env.NEXT_PUBLIC_DEFAULT_SAVE_DIRECTORY}${slugify(mod?.title || '')}`} 
                         onChange={handleInputChange} 
                         className="bg-[#162b3d] border-[#262626]"
-                        placeholder="~/.config/gzdoom/saves/"
                       />
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="text-lg font-mono mb-2">Mod Files</h3>
                   <ModFileList files={files} onChange={setFiles} />
                 </div>
               </div>
-              
+
               <LaunchOptions 
                 launchParameters={mod?.launchParameters || ''} 
                 onChange={(params) => setMod(prev => prev ? { ...prev, launchParameters: params } : null)} 
               />
             </div>
-            
+
             <DialogFooter className="flex justify-between mt-6">
               <div>
                 <Button 
@@ -271,7 +271,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                   Delete Instance
                 </Button>
               </div>
-              
+
               <div>
                 <Button 
                   variant="outline" 
