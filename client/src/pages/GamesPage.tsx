@@ -66,16 +66,14 @@ export const GamesPage: React.FC = () => {
   };
   
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      {/* Header at the very top spans full width */}
-      <Header onSearch={handleSearch} />
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar 
+        activeVersion={activeVersion} 
+        onVersionSelect={handleVersionSelect} 
+      />
       
-      {/* Main content area with sidebar and game display */}
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar 
-          activeVersion={activeVersion} 
-          onVersionSelect={handleVersionSelect} 
-        />
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <Header onSearch={handleSearch} />
         
         <div className="flex-1 flex flex-col overflow-hidden">
           <ViewToggle
@@ -122,14 +120,14 @@ export const GamesPage: React.FC = () => {
             )}
           </div>
         </div>
+        
+        <GameSettingsModal 
+          modId={selectedModId}
+          isOpen={isSettingsModalOpen}
+          onClose={handleCloseSettingsModal}
+          doomVersions={versions}
+        />
       </div>
-      
-      <GameSettingsModal 
-        modId={selectedModId}
-        isOpen={isSettingsModalOpen}
-        onClose={handleCloseSettingsModal}
-        doomVersions={versions}
-      />
     </div>
   );
 };

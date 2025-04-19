@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
           </span>
         </Link>
         <a 
-          href="https://www.moddb.com/games/doom" 
+          href="https://www.moddb.com/games/doom-ii" 
           target="_blank" 
           rel="noopener noreferrer"
           className="nav-tab cursor-pointer"
