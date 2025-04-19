@@ -163,7 +163,9 @@ export class GameService {
       fileArgs.push('-file');
       files.sort((a, b) => a.loadOrder - b.loadOrder)
         .forEach(file => {
-          fileArgs.push(file.filePath);
+          // Ensure we're using the full path to the mod file
+          const fullPath = path.resolve(file.filePath);
+          fileArgs.push(fullPath);
         });
     }
     
