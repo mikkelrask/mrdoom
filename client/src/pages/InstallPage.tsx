@@ -140,7 +140,13 @@ export const InstallPage: React.FC = () => {
                               <Input 
                                 placeholder="Enter mod title" 
                                 className="bg-[#0c1c2a] border-[#262626]" 
-                                {...field} 
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  // Update save directory when title changes
+                                  const sluggedTitle = slugify(e.target.value);
+                                  form.setValue('saveDirectory', `/home/runner/workspace/saves/${sluggedTitle}`);
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
