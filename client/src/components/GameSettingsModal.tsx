@@ -240,7 +240,7 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
                       <Input 
                         id="saveDirectory" 
                         name="saveDirectory" 
-                        value={mod?.saveDirectory || `${process.env.NEXT_PUBLIC_DEFAULT_SAVE_DIRECTORY}${slugify(mod?.title || '')}`} 
+                        value={mod?.saveDirectory || `/home/runner/workspace/saves/${slugify(mod?.title || '')}`} 
                         onChange={handleInputChange} 
                         className="bg-[#162b3d] border-[#262626]"
                       />
