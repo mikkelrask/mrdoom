@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { execFile } from 'child_process';
 import util from 'util';
+import { Stats } from 'fs';
 
 const execFilePromise = util.promisify(execFile);
 
@@ -18,7 +19,7 @@ export class FileService {
   }
 
   // Get info about a file
-  async getFileInfo(filePath: string): Promise<fs.Stats | null> {
+  async getFileInfo(filePath: string): Promise<Stats | null> {
     try {
       return await fs.stat(filePath);
     } catch {
@@ -77,5 +78,21 @@ export class FileService {
     }
   }
 }
+
+// In your route handler for POST /api/mods/:id/launch, use the unified launchGame
+// Example (pseudo-code):
+// router.post('/api/mods/:id/launch', async (req, res) => {
+//   const modId = req.params.id;
+//   try {
+//     const result = await launchGame({ modId });
+//     if (result.success) {
+//       res.json({ success: true });
+//     } else {
+//       res.status(500).json({ success: false, message: result.message });
+//     }
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// });
 
 export const fileService = new FileService();

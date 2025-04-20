@@ -1,8 +1,9 @@
 import path from 'path';
 import os from 'os';
-import { storage } from '../storage';
+import * as storage from '../storage';
 import { fileService } from './fileService';
-import { IMod, IModFile } from '@shared/schema';
+import { IMod, IModFile, IDoomVersion } from '@shared/schema';
+import { MODS_DIR } from '../storage';
 
 // Service to handle game-related operations
 export class GameService {
@@ -11,175 +12,145 @@ export class GameService {
     return path.join(os.homedir(), '.config', 'mrdoom');
   }
 
-  // Mod config file path
-  private getModConfigPath(modId: number): string {
-    return path.join(this.getConfigDir(), 'mods', `${modId}.json`);
-  }
-
   // Get a list of all mods
   async getAllMods(): Promise<IMod[]> {
+    // Uses the new storage function
     return storage.getMods();
   }
 
-  // Get mods filtered by Doom version
-  async getModsByDoomVersion(versionSlug: string): Promise<IMod[]> {
-    const version = await storage.getDoomVersionBySlug(versionSlug);
-    if (!version) return [];
-    
-    return storage.getModsByDoomVersion(version.id);
+  // Get a single mod by ID (string)
+  async getMod(id: string): Promise<{ mod: IMod, files: IModFile[] }> {
+    // Uses the new storage function
+    const modWithFiles = await storage.getMod(id);
+    const { files, ...mod } = modWithFiles;
+    // Always include files property
+    return { mod: { ...mod, files: files || [] }, files: files || [] };
   }
 
-  // Get a single mod by ID
-  async getMod(id: number): Promise<IMod | undefined> {
-    return storage.getMod(id);
-  }
-
-  // Get mod files for a specific mod
-  async getModFiles(modId: number): Promise<IModFile[]> {
-    return storage.getModFiles(modId);
-  }
-
-  // Save a mod configuration
+  // Save a mod configuration (mod ID is string)
   async saveMod(mod: IMod, files: IModFile[]): Promise<IMod | undefined> {
-    // Save to in-memory storage first
-    let savedMod: IMod | undefined;
-    
-    if (mod.id) {
-      savedMod = await storage.updateMod(mod.id, mod);
-    } else {
-      savedMod = await storage.createMod(mod);
+    try {
+      // Ensure mod has an ID (string)
+      if (!mod.id) {
+        // Generate a simple string ID if creating a new mod
+        mod.id = Date.now().toString(); 
+      }
+      
+      // Prepare data for storage function (FLAT structure)
+      const modDataToSave = { 
+        ...mod, // Spread mod properties
+        files: files || [] // Add files array
+      };
+      
+      // Save mod metadata and files using new storage function
+      // storage.saveMod expects the flat structure
+      const savedMod = await storage.saveMod(modDataToSave);
+      
+      // storage.saveMod now returns the IMod part, so just return that
+      return savedMod;
+    } catch (error: any) {
+      console.error(`Error saving mod ${mod.id}:`, error);
+      return undefined;
     }
-    
-    if (!savedMod) return undefined;
-    
-    // Process files (delete existing ones and add new ones)
-    const existingFiles = await storage.getModFiles(savedMod.id);
-    
-    // Delete existing files
-    for (const file of existingFiles) {
-      await storage.deleteModFile(file.id);
-    }
-    
-    // Add new files
-    for (const file of files) {
-      await storage.createModFile({
-        ...file,
-        modId: savedMod.id
-      });
-    }
-    
-    // Save mod config to file system for persistence
-    await this.saveModToConfig(savedMod);
-    
-    return savedMod;
   }
 
-  // Delete a mod
-  async deleteMod(id: number): Promise<boolean> {
-    // Delete files first
-    const files = await storage.getModFiles(id);
-    for (const file of files) {
-      await storage.deleteModFile(file.id);
+  // Delete a mod (string ID)
+  async deleteMod(id: string): Promise<boolean> {
+    try {
+      const modFilePath = path.join(MODS_DIR, `${id}.json`);
+      return await fileService.deleteFile(modFilePath);
+    } catch (error: any) {
+      console.error(`Error deleting mod ${id}:`, error);
+      return false;
     }
-    
-    // Delete mod
-    const success = await storage.deleteMod(id);
-    
-    // Delete config file
-    if (success) {
-      await fileService.deleteFile(this.getModConfigPath(id));
-    }
-    
-    return success;
   }
 
-  // Save mod config to file system
-  private async saveModToConfig(mod: IMod): Promise<boolean> {
-    const files = await storage.getModFiles(mod.id);
-    const config = {
-      mod,
-      files
-    };
-    
-    return fileService.writeFile(
-      this.getModConfigPath(mod.id),
-      JSON.stringify(config, null, 2)
-    );
-  }
-
-  // Load mods from file system on startup
+  // Load mods from file system on startup (Now just calls storage.getMods)
   async loadModsFromConfig(): Promise<void> {
-    const configDir = path.join(this.getConfigDir(), 'mods');
-    const files = await fileService.readDirectory(configDir);
-    
-    for (const file of files) {
-      if (!file.endsWith('.json')) continue;
+    // The new storage functions load mods on demand
+    // We might still want to call getMods here to ensure initialization
+    // or handle potential errors during initial load.
+    try {
+      await storage.getMods(); // Call to potentially initialize/check
+      console.log('Checked mods directory.');
+    } catch (error) {
+      console.error('Error during initial mod loading:', error);
+    }
+  }
+
+  // Launch a mod (accepts string ID)
+  async launchMod(id: string): Promise<{ success: boolean, message?: string }> {
+    try {
+      const modWithFiles = await storage.getMod(id); // Use string ID
+      const { files, ...mod } = modWithFiles;
+      if (!mod) throw new Error('Mod not found');
       
-      const filePath = path.join(configDir, file);
-      const content = await fileService.readFile(filePath);
-      
-      if (content) {
-        try {
-          const config = JSON.parse(content);
-          const { mod, files } = config;
-          
-          // Add to storage
-          const savedMod = await storage.createMod(mod);
-          
-          for (const file of files) {
-            await storage.createModFile({
-              ...file,
-              modId: savedMod.id
-            });
-          }
-        } catch (error) {
-          console.error(`Error loading mod config from ${filePath}:`, error);
+      // Need settings for executable path
+      const settings = await storage.getSettings();
+      if (!settings.gzDoomPath) {
+        throw new Error('GZDoom executable path not set in settings.');
+      }
+      const executable = settings.gzDoomPath;
+
+      // Load Doom version for args
+      const doomVersionId = String(mod.doomVersionId);
+      const doomVersion: Partial<IDoomVersion> | null = doomVersionId ? (await storage.getDoomVersion(doomVersionId)) || null : null;
+      let baseArgs: string[] = [];
+      if (doomVersion && typeof doomVersion.args === 'string') {
+        baseArgs = doomVersion.args.split(' ');
+      }
+
+      // Add mod files in order
+      const fileArgs: string[] = [];
+      if (files.length > 0) {
+        fileArgs.push('-file');
+        files.sort((a, b) => (a.loadOrder ?? 0) - (b.loadOrder ?? 0))
+          .forEach(file => {
+            if (file.filePath) {
+              const fullPath = path.resolve(file.filePath);
+              fileArgs.push(fullPath);
+            } else {
+              console.warn(`Mod file ${file.id} for mod ${mod.id} is missing filePath.`);
+            }
+          });
+      }
+
+      // Add save directory: prefer mod.saveDirectory, else settings.savegamesPath
+      const saveDir = mod.saveDirectory || settings.savegamesPath;
+      const saveArgs: string[] = saveDir ? ['-savedir', saveDir] : [];
+
+      // Add custom launch parameters
+      let customArgs: string[] = [];
+      if (mod.launchParameters) {
+        customArgs = mod.launchParameters.split(' ');
+      }
+
+      // Combine all args: baseArgs, fileArgs, saveArgs, customArgs
+      const args = [...baseArgs, ...fileArgs, ...saveArgs, ...customArgs];
+      // Add IWAD argument if available from doomVersion
+      let iwad = undefined;
+      if (doomVersion && typeof doomVersion.defaultIwad === 'string' && doomVersion.defaultIwad.trim()) {
+        iwad = doomVersion.defaultIwad;
+      } else if (doomVersion && typeof doomVersion.args === 'string') {
+        const match = doomVersion.args.match(/-iwad\s+(\S+)/i);
+        if (match) {
+          iwad = match[1];
         }
       }
-    }
-  }
+      // Only add -iwad if not already present in baseArgs
+      if (iwad && !baseArgs.some(arg => arg === '-iwad')) {
+        args.unshift('-iwad', iwad);
+      }
+      // Log the full command for debugging
+      console.log('Launching command:', executable, args.join(' '));
 
-  // Launch a mod
-  async launchMod(id: number): Promise<boolean> {
-    const mod = await storage.getMod(id);
-    if (!mod) return false;
-    
-    const version = await storage.getDoomVersion(mod.doomVersionId);
-    if (!version) return false;
-    
-    const files = await storage.getModFiles(id);
-    
-    // Build launch parameters
-    const baseArgs = version.args?.split(' ') || [];
-    let customArgs: string[] = [];
-    
-    if (mod.launchParameters) {
-      customArgs = mod.launchParameters.split(' ');
+      // Launch the game using fileService
+      const success = await fileService.launchGame(executable, args);
+      return { success };
+    } catch (error: any) {
+      console.error(`Error launching mod ${id}:`, error);
+      return { success: false, message: error.message };
     }
-    
-    // Add mod files in order
-    const fileArgs: string[] = [];
-    if (files.length > 0) {
-      fileArgs.push('-file');
-      files.sort((a, b) => a.loadOrder - b.loadOrder)
-        .forEach(file => {
-          // Ensure we're using the full path to the mod file
-          const fullPath = path.resolve(file.filePath);
-          fileArgs.push(fullPath);
-        });
-    }
-    
-    // Add save directory if specified
-    const saveArgs: string[] = [];
-    if (mod.saveDirectory) {
-      saveArgs.push('-savedir', mod.saveDirectory);
-    }
-    
-    // Combine all args
-    const args = [...baseArgs, ...fileArgs, ...saveArgs, ...customArgs];
-    
-    // Launch the game
-    return fileService.launchGame(version.executable, args);
   }
 }
 

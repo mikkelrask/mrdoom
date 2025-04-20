@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { gameService } from "./services/gameService";
 import { moddbService } from "./services/moddbService";
-import { storage } from "./storage";
+import * as storage from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -15,7 +15,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // === Doom Versions API ===
   app.get("/api/versions", async (req, res) => {
     const versions = await storage.getDoomVersions();
-    res.json(versions);
+    res.json(versions); // Ensure this sends the array directly
   });
 
   app.get("/api/versions/:slug", async (req, res) => {
@@ -28,98 +28,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === Mods API ===
   app.get("/api/mods", async (req, res) => {
-    const { version } = req.query;
+    // const { version } = req.query; // Version filtering commented out
     
-    if (version && typeof version === 'string') {
-      const mods = await gameService.getModsByDoomVersion(version);
-      return res.json(mods);
-    }
+    // if (version && typeof version === 'string') {
+      // const mods = await gameService.getModsByDoomVersion(version);
+      // return res.json(mods);
+    // }
     
     const mods = await gameService.getAllMods();
     res.json(mods);
   });
 
   app.get("/api/mods/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid mod ID" });
-    }
+    const id = req.params.id; // Keep ID as string
+    // if (isNaN(id)) {
+      // return res.status(400).json({ message: "Invalid mod ID" });
+    // }
     
-    const mod = await gameService.getMod(id);
-    if (!mod) {
-      return res.status(404).json({ message: "Mod not found" });
+    try {
+      const { mod, files } = await gameService.getMod(id);
+      res.json({ mod, files });
+    } catch (error: any) {
+      res.status(404).json({ message: error.message || "Mod not found" });
     }
-    
-    const files = await gameService.getModFiles(id);
-    res.json({ mod, files });
   });
 
   app.post("/api/mods", async (req, res) => {
     const { mod, files } = req.body;
     
-    if (!mod || !mod.title || !mod.doomVersionId || !mod.sourcePort) {
+    // Basic validation - might need more depending on IMod structure
+    if (!mod || !mod.title /* || !mod.doomVersionId || !mod.sourcePort */) { // Removed version/port checks for now
       return res.status(400).json({ message: "Missing required mod properties" });
     }
     
-    const savedMod = await gameService.saveMod(mod, files || []);
-    
-    if (!savedMod) {
-      return res.status(500).json({ message: "Failed to save mod" });
+    try {
+      const savedMod = await gameService.saveMod(mod, files || []);
+      res.status(201).json(savedMod);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message || "Failed to save mod" });
     }
-    
-    res.status(201).json(savedMod);
   });
 
   app.put("/api/mods/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid mod ID" });
-    }
+    const id = req.params.id; // Keep ID as string
+    // if (isNaN(id)) {
+      // return res.status(400).json({ message: "Invalid mod ID" });
+    // }
     
     const { mod, files } = req.body;
     if (!mod) {
       return res.status(400).json({ message: "Missing mod data" });
     }
     
-    mod.id = id;
-    const updatedMod = await gameService.saveMod(mod, files || []);
-    
-    if (!updatedMod) {
-      return res.status(404).json({ message: "Mod not found" });
+    mod.id = id; // Assign string ID
+    try {
+      const updatedMod = await gameService.saveMod(mod, files || []);
+      res.json(updatedMod);
+    } catch (error: any) {
+       res.status(404).json({ message: error.message || "Mod not found or failed to update" });
     }
-    
-    res.json(updatedMod);
   });
 
   app.delete("/api/mods/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid mod ID" });
+    const id = req.params.id; // Keep ID as string
+    // if (isNaN(id)) {
+      // return res.status(400).json({ message: "Invalid mod ID" });
+    // }
+    
+    try {
+      const success = await gameService.deleteMod(id);
+      if (!success) {
+         throw new Error("Mod not found or failed to delete");
+      }
+      res.status(204).send();
+    } catch (error: any) {
+       res.status(404).json({ message: error.message || "Mod not found or failed to delete" });
     }
-    
-    const success = await gameService.deleteMod(id);
-    
-    if (!success) {
-      return res.status(404).json({ message: "Mod not found" });
-    }
-    
-    res.status(204).send();
   });
 
   // Launch a mod
   app.post("/api/mods/:id/launch", async (req, res) => {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
+    const id = req.params.id; // Use string ID
+    if (!id) {
       return res.status(400).json({ message: "Invalid mod ID" });
     }
-    
-    const success = await gameService.launchMod(id);
-    
-    if (!success) {
-      return res.status(500).json({ message: "Failed to launch mod" });
+    try {
+       const result = await gameService.launchMod(id);
+       if (!result.success) {
+         throw new Error(result.message || "Failed to launch mod");
+       }
+       res.json({ success: true });
+    } catch (error: any) {
+       res.status(500).json({ message: error.message || "Failed to launch mod" });
     }
-    
-    res.json({ success: true });
+  });
+
+  // === Mod Files API === // New Section
+  app.get("/api/mod-files/catalog", async (req, res) => {
+    try {
+      const catalog = await storage.getModFileCatalog();
+      if (!Array.isArray(catalog)) {
+        console.warn('routes.ts: getModFileCatalog did not return an array:', catalog);
+        return res.json([]);
+      }
+      res.json(catalog);
+    } catch (error) {
+      console.error('routes.ts: Error in /api/mod-files/catalog:', error);
+      res.json([]);
+    }
+  });
+
+  app.post("/api/mod-files/catalog", async (req, res) => {
+    try {
+      console.log("POST /api/mod-files/catalog received with body:", req.body);
+      
+      const fileData = req.body;
+      
+      // Basic validation
+      if (!fileData || !fileData.filePath) {
+        console.log("Validation failed: Missing required file properties");
+        return res.status(400).json({ message: "Missing required file properties" });
+      }
+
+      console.log("Adding file to catalog:", fileData);
+      const savedFile = await storage.addModFileToCatalog(fileData);
+      console.log("File added to catalog successfully:", savedFile);
+      
+      res.status(201).json(savedFile);
+    } catch (error: any) {
+      console.error("Error in POST /api/mod-files/catalog:", error);
+      res.status(500).json({ message: error.message || "Failed to add file to catalog" });
+    }
   });
 
   // === ModDB API ===
@@ -159,6 +198,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/moddb/latest", async (req, res) => {
     const mods = await moddbService.getLatestDoomMods();
     res.json(mods);
+  });
+
+  // === Dialog API === (For file selection)
+  app.post("/api/dialog/open", async (req, res) => {
+    try {
+      // Check if we're running in Electron
+      if (!global.electron) {
+        return res.status(400).json({ 
+          canceled: true, 
+          filePaths: [],
+          message: "File dialogs are only available in the Electron app" 
+        });
+      }
+      
+      const options = req.body;
+      const result = await global.electron.dialog.showOpenDialog(options);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error showing open dialog:", error);
+      res.status(500).json({ 
+        canceled: true, 
+        filePaths: [],
+        message: error.message || "Failed to show open dialog" 
+      });
+    }
+  });
+
+  app.post("/api/dialog/save", async (req, res) => {
+    try {
+      // Check if we're running in Electron
+      if (!global.electron) {
+        return res.status(400).json({ 
+          canceled: true, 
+          filePath: "",
+          message: "File dialogs are only available in the Electron app" 
+        });
+      }
+      
+      const options = req.body;
+      const result = await global.electron.dialog.showSaveDialog(options);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error showing save dialog:", error);
+      res.status(500).json({ 
+        canceled: true, 
+        filePath: "",
+        message: error.message || "Failed to show save dialog" 
+      });
+    }
   });
 
   return httpServer;

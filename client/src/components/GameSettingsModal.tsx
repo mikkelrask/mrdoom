@@ -102,9 +102,20 @@ export const GameSettingsModal: React.FC<GameSettingsModalProps> = ({
 
   // Initialize form state when data is loaded
   useEffect(() => {
-    if (data) {
-      setMod(data.mod);
-      setFiles(data.files);
+    if (data && typeof data === 'object' && data !== null) {
+      // Type-safe check if data has a 'mod' property
+      if ('mod' in data && data.mod) {
+        setMod(data.mod as IMod);
+      } else {
+        setMod(null);
+      }
+      
+      // Type-safe check if data has a 'files' property
+      if ('files' in data && Array.isArray(data.files)) {
+        setFiles(data.files as IModFile[]);
+      } else {
+        setFiles([]);
+      }
     }
   }, [data]);
 

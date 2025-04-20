@@ -70,16 +70,17 @@ export const ModFileList: React.FC<ModFileListProps> = ({ files, onChange }) => 
         files.map((file, index) => (
           <div key={file.id} className="flex justify-between items-center mb-2 text-sm">
             <div className="flex items-center space-x-1">
-              <button onClick={() => moveUp(index)} disabled={index === 0} className="p-1 text-[#e6e6e6] hover:text-white disabled:opacity-30">
+              <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="p-1 text-[#e6e6e6] hover:text-white disabled:opacity-30">
                 <ChevronUp className="h-4 w-4" />
               </button>
-              <button onClick={() => moveDown(index)} disabled={index === files.length - 1} className="p-1 text-[#e6e6e6] hover:text-white disabled:opacity-30">
+              <button type="button" onClick={() => moveDown(index)} disabled={index === files.length - 1} className="p-1 text-[#e6e6e6] hover:text-white disabled:opacity-30">
                 <ChevronDown className="h-4 w-4" />
               </button>
               <span className="text-xs mr-2">{index + 1}.</span>
               <span title={file.filePath}>{file.fileName}</span>
             </div>
             <button 
+              type="button"
               onClick={() => removeFile(file.id)} 
               className="text-xs bg-[#162b3d] p-1 rounded hover:bg-[#0c1c2a]"
             >
@@ -97,6 +98,7 @@ export const ModFileList: React.FC<ModFileListProps> = ({ files, onChange }) => 
           className="text-xs bg-[#162b3d] border-[#262626]"
         />
         <Button 
+          type="button"
           onClick={addFile} 
           size="sm" 
           variant="outline" 

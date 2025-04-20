@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -23,11 +23,29 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
   
   // Settings state
   const [settings, setSettings] = useState({
-    gzDoomPath: 'C:\\Games\\GZDoom\\gzdoom.exe',
-    saveDirectory: 'C:\\Games\\Doom\\Saves',
-    modsDirectory: 'C:\\Games\\Doom\\Mods',
-    screenshotsDirectory: 'C:\\Games\\Doom\\Screenshots',
+    gzDoomPath: '',
+    saveDirectory: '',
+    modsDirectory: '',
+    screenshotsDirectory: '',
   });
+
+  // Fetch settings from API when dialog opens
+  useEffect(() => {
+    if (!isOpen) return;
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        setSettings({
+          gzDoomPath: data.gzDoomPath || '',
+          saveDirectory: data.savegamesPath || '',
+          modsDirectory: data.modsDirectory || '',
+          screenshotsDirectory: data.screenshotsPath || '',
+        });
+      })
+      .catch(() => {
+        toast({ title: 'Error', description: 'Failed to load settings', variant: 'destructive' });
+      });
+  }, [isOpen, toast]);
   
   // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,14 +57,33 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
   };
   
   // Handle save
-  const handleSave = () => {
-    // Here you would typically save to a config file or database
-    // For now, we'll just show a toast
-    toast({
-      title: 'Settings Saved',
-      description: 'Your settings have been saved successfully.',
-    });
-    onClose();
+  const handleSave = async () => {
+    try {
+      const payload = {
+        gzDoomPath: settings.gzDoomPath,
+        savegamesPath: settings.saveDirectory,
+        modsDirectory: settings.modsDirectory,
+        screenshotsPath: settings.screenshotsDirectory,
+        theme: 'dark', // or get from UI if you have a theme selector
+      };
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Failed to save settings');
+      toast({
+        title: 'Settings Saved',
+        description: 'Your settings have been saved successfully.',
+      });
+      onClose();
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save settings',
+        variant: 'destructive',
+      });
+    }
   };
   
   // Handle folder browse (mock implementation)

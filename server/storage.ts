@@ -1,194 +1,411 @@
-import { 
-  IDoomVersion, 
-  IMod, 
-  IModFile, 
-  InsertDoomVersion, 
-  InsertMod, 
-  InsertModFile 
-} from "@shared/schema";
+import fs from 'fs-extra';
+import path from 'path';
+import os from 'os';
+import { IAppSettings, IDoomVersion, IMod, IModFile } from '@shared/schema';
 
-// Interface for storage operations
-export interface IStorage {
-  // DoomVersion operations
-  getDoomVersions(): Promise<IDoomVersion[]>;
-  getDoomVersion(id: number): Promise<IDoomVersion | undefined>;
-  getDoomVersionBySlug(slug: string): Promise<IDoomVersion | undefined>;
-  createDoomVersion(version: InsertDoomVersion): Promise<IDoomVersion>;
-  
-  // Mod operations
-  getMods(): Promise<IMod[]>;
-  getModsByDoomVersion(doomVersionId: number): Promise<IMod[]>;
-  getMod(id: number): Promise<IMod | undefined>;
-  createMod(mod: InsertMod): Promise<IMod>;
-  updateMod(id: number, mod: Partial<IMod>): Promise<IMod | undefined>;
-  deleteMod(id: number): Promise<boolean>;
-  
-  // ModFile operations
-  getModFiles(modId: number): Promise<IModFile[]>;
-  getModFile(id: number): Promise<IModFile | undefined>;
-  createModFile(file: InsertModFile): Promise<IModFile>;
-  updateModFile(id: number, file: Partial<IModFile>): Promise<IModFile | undefined>;
-  deleteModFile(id: number): Promise<boolean>;
+// Define storage paths (Aligned with local-structure.txt)
+const CONFIG_DIR = path.join(os.homedir(), '.config', 'mrdoom');
+const DATA_DIR = path.join(CONFIG_DIR, 'data'); // For extra data
+export const MODS_DIR = path.join(CONFIG_DIR, 'mods'); // For mod {id}.json files
+const SETTINGS_FILE = path.join(CONFIG_DIR, 'settings.json'); // Directly in CONFIG_DIR per local-structure.txt
+const DOOM_VERSIONS_FILE = path.join(CONFIG_DIR, 'doomVersions.json'); // Directly in CONFIG_DIR per local-structure.txt
+const MOD_FILE_CATALOG = path.join(CONFIG_DIR, 'modFileCatalogue.json'); // Correctly spelled with 'ue' in CONFIG_DIR
+
+// Default settings
+const DEFAULT_SETTINGS: IAppSettings = {
+  gzDoomPath: 'gzdoom', // Default to assuming gzdoom is in PATH
+  theme: 'dark',
+  savegamesPath: '', // Add empty string defaults for optional properties
+  screenshotsPath: '',
+  defaultSourcePort: ''
+};
+
+// Default Doom Versions
+const DEFAULT_DOOM_VERSIONS: IDoomVersion[] = [
+  { id: "1", name: "Doom", slug: "doom", args: "-iwad DOOM.WAD", icon: "doom.png", executable: "gzdoom", parameters: "", defaultIwad: "DOOM.WAD" },
+  { id: "2", name: "Doom II", slug: "doom2", args: "-iwad DOOM2.WAD", icon: "doom2.png", executable: "gzdoom", parameters: "", defaultIwad: "DOOM2.WAD" },
+  { id: "3", name: "Final Doom: TNT", slug: "tnt", args: "-iwad TNT.WAD", icon: "tnt.png", executable: "gzdoom", parameters: "", defaultIwad: "TNT.WAD" },
+  { id: "4", name: "Final Doom: Plutonia", slug: "plutonia", args: "-iwad PLUTONIA.WAD", icon: "plutonia.png", executable: "gzdoom", parameters: "", defaultIwad: "PLUTONIA.WAD" },
+  { id: "5", name: "FreeDoom Phase 1", slug: "freedoom1", args: "-iwad freedoom1.wad", icon: "freedoom1.png", executable: "gzdoom", parameters: "", defaultIwad: "freedoom1.wad" },
+  { id: "6", name: "FreeDoom Phase 2", slug: "freedoom2", args: "-iwad freedoom2.wad", icon: "freedoom2.png", executable: "gzdoom", parameters: "", defaultIwad: "freedoom2.wad" }
+];
+
+// Ensure config directories exist and create default files
+export function initStorage() {
+  try {
+    fs.ensureDirSync(CONFIG_DIR);
+    fs.ensureDirSync(DATA_DIR); // Ensure data directory exists
+    fs.ensureDirSync(MODS_DIR); // Ensure mods directory exists
+    
+    // Create settings file with defaults if it doesn't exist
+    if (!fs.existsSync(SETTINGS_FILE)) {
+      fs.writeJSONSync(SETTINGS_FILE, DEFAULT_SETTINGS, { spaces: 2 });
+      console.log(`Created default settings file at ${SETTINGS_FILE}`);
+    }
+    
+    // Create doomVersions file with defaults if it doesn't exist
+    if (!fs.existsSync(DOOM_VERSIONS_FILE)) {
+      fs.writeJSONSync(DOOM_VERSIONS_FILE, DEFAULT_DOOM_VERSIONS, { spaces: 2 });
+      console.log(`Created default doom versions file at ${DOOM_VERSIONS_FILE}`);
+    }
+
+    // Create modFileCatalog file with empty array if it doesn't exist
+    if (!fs.existsSync(MOD_FILE_CATALOG)) {
+      fs.writeJSONSync(MOD_FILE_CATALOG, [], { spaces: 2 }); // Default to empty array
+      console.log(`Created default mod file catalog at ${MOD_FILE_CATALOG}`);
+    }
+
+    console.log('Storage initialized successfully');
+    return true;
+  } catch (error: any) {
+    console.error('Failed to initialize storage:', error);
+    return false;
+  }
 }
 
-export class MemStorage implements IStorage {
-  private doomVersions: Map<number, IDoomVersion>;
-  private mods: Map<number, IMod>;
-  private modFiles: Map<number, IModFile>;
-  private doomVersionIdCounter: number;
-  private modIdCounter: number;
-  private modFileIdCounter: number;
-
-  constructor() {
-    this.doomVersions = new Map();
-    this.mods = new Map();
-    this.modFiles = new Map();
-    this.doomVersionIdCounter = 1;
-    this.modIdCounter = 1;
-    this.modFileIdCounter = 1;
-    
-    // Initialize with default Doom versions
-    this.initializeDefaultDoomVersions();
+// Get application settings
+export async function getSettings(): Promise<IAppSettings> {
+  try {
+    initStorage(); // Ensure directories/files exist
+    console.log('[DEBUG] Reading settings from', SETTINGS_FILE);
+    const settingsData = await fs.readJSON(SETTINGS_FILE);
+    const settings: IAppSettings = { ...DEFAULT_SETTINGS, ...settingsData };
+    console.log('[DEBUG] Retrieved settings:', settings);
+    return settings;
+  } catch (error: any) {
+    console.error('[DEBUG] Error getting settings:', error);
+    return DEFAULT_SETTINGS;
   }
+}
 
-  private initializeDefaultDoomVersions() {
-    const defaultVersions: InsertDoomVersion[] = [
-      {
-        name: "Doom",
-        slug: "doom",
-        icon: "doom",
-        executable: "gzdoom",
-        args: "-iwad doom.wad"
-      },
-      {
-        name: "Doom 2",
-        slug: "doom2",
-        icon: "doom2",
-        executable: "gzdoom",
-        args: "-iwad doom2.wad"
-      },
-      {
-        name: "FreeDoom",
-        slug: "freedoom",
-        icon: "freedoom",
-        executable: "gzdoom",
-        args: "-iwad freedoom1.wad"
-      },
-      {
-        name: "FreeDoom 2",
-        slug: "freedoom2",
-        icon: "freedoom2",
-        executable: "gzdoom",
-        args: "-iwad freedoom2.wad"
-      },
-      {
-        name: "Plutonia",
-        slug: "plutonia",
-        icon: "plutonia",
-        executable: "gzdoom",
-        args: "-iwad plutonia.wad"
-      },
-      {
-        name: "TNT Evilution",
-        slug: "tnt",
-        icon: "tnt",
-        executable: "gzdoom",
-        args: "-iwad tnt.wad"
+// Save application settings
+export async function saveSettings(settings: Partial<IAppSettings>): Promise<IAppSettings> {
+  try {
+    initStorage(); // Ensure directories/files exist
+    const currentSettings = await getSettings();
+    const updatedSettings = { ...currentSettings, ...settings };
+    console.log('[DEBUG] Saving settings to', SETTINGS_FILE, 'with data:', updatedSettings);
+    await fs.writeJSON(SETTINGS_FILE, updatedSettings, { spaces: 2 });
+    console.log('[DEBUG] Saved settings:', updatedSettings);
+    return updatedSettings;
+  } catch (error: any) {
+    console.error('[DEBUG] Error saving settings:', error);
+    throw new Error(`Failed to save settings: ${error.message}`);
+  }
+}
+
+// === Doom Versions ===
+// Get all Doom versions (expects direct array in JSON)
+export async function getDoomVersions(): Promise<IDoomVersion[]> {
+  try {
+    initStorage(); // Ensure file exists
+    const versions = await fs.readJSON(DOOM_VERSIONS_FILE);
+    // No need to extract from .versions property anymore
+    return versions as IDoomVersion[];
+  } catch (error: any) {
+    console.error('Error getting Doom versions:', error);
+    return []; // Return empty array on error
+  }
+}
+
+// Get a specific Doom version by slug
+export async function getDoomVersionBySlug(slug: string): Promise<IDoomVersion | undefined> {
+  try {
+    const versions = await getDoomVersions();
+    return versions.find(v => v.slug === slug);
+  } catch (error: any) {
+    console.error(`Error getting Doom version by slug ${slug}:`, error);
+    return undefined;
+  }
+}
+
+// === Mod File Catalog ===
+// Get the mod file catalog
+export async function getModFileCatalog(): Promise<any[]> {
+  try {
+    const filePath = path.join(CONFIG_DIR, 'modFileCatalogue.json');
+    console.log('[DEBUG] Reading modFileCatalogue.json from:', filePath);
+    if (!fs.existsSync(filePath)) {
+      return [];
+    }
+    const raw = await fs.promises.readFile(filePath, 'utf-8');
+    console.log('[DEBUG] Raw modFileCatalogue.json contents:', raw);
+    let data = [];
+    try {
+      data = JSON.parse(raw);
+    } catch (err) {
+      console.error('storage.ts: Failed to parse modFileCatalogue.json:', err, 'Raw:', raw);
+      data = [];
+    }
+    if (!Array.isArray(data)) {
+      console.warn('storage.ts: modFileCatalogue.json is not an array, got:', data);
+      return [];
+    }
+    return data;
+  } catch (error) {
+    console.error('storage.ts: Error reading modFileCatalogue.json:', error);
+    return [];
+  }
+}
+
+// Add a mod file to the catalog
+export async function addModFileToCatalog(file: Omit<IModFile, 'id' | 'modId'>): Promise<IModFile> {
+  try {
+    console.log("addModFileToCatalog called with:", file);
+    initStorage(); // Ensure directories and files exist
+    
+    // Read existing catalog
+    console.log(`Reading catalog from ${MOD_FILE_CATALOG}`);
+    let catalog: IModFile[] = [];
+    if (fs.existsSync(MOD_FILE_CATALOG)) {
+      catalog = await fs.readJSON(MOD_FILE_CATALOG);
+      console.log(`Existing catalog has ${catalog.length} entries`);
+    } else {
+      console.log(`Catalog file doesn't exist, creating new one`);
+    }
+    
+    if (file.filePath) {
+      // Always set fileName from filePath
+      const fileName = file.filePath.split(/[\\/]/).pop() || file.filePath;
+      // Always set name (pretty name), default to fileName if missing
+      const name = file.name && file.name.trim() ? file.name : fileName;
+      // Create new catalog entry with an ID
+      const createdFile: IModFile = {
+        ...file,
+        name,
+        fileName,
+        id: Date.now(), // Use timestamp as ID
+        modId: '0' // 0 as string for catalog entry
+      };
+      console.log("Created new catalog entry:", createdFile);
+      // Add to catalog
+      catalog.push(createdFile);
+      // Save updated catalog
+      console.log(`Writing updated catalog with ${catalog.length} entries to ${MOD_FILE_CATALOG}`);
+      await fs.writeJSON(MOD_FILE_CATALOG, catalog, { spaces: 2 });
+      console.log(`Catalog file saved successfully`);
+      return createdFile;
+    }
+    throw new Error('Invalid file: filePath is required');
+  } catch (error: any) {
+    console.error('Error adding mod file to catalog:', error);
+    throw new Error(`Failed to add mod file to catalog: ${error.message}`);
+  }
+}
+
+// === Mods ===
+export async function saveMod(modData: IMod & { files: IModFile[] }): Promise<IMod> {
+  // Ensure doomVersionId is always a string
+  if (modData.doomVersionId !== undefined) {
+    modData.doomVersionId = String(modData.doomVersionId);
+  }
+  try {
+    initStorage(); // Ensure mods directory exists
+    const modFilePath = path.join(MODS_DIR, `${modData.id}.json`);
+    // Data is already in the flat structure { ...IMod, files: [...] }
+    await fs.writeJSON(modFilePath, modData, { spaces: 2 });
+    // Return only the IMod part (without files) as per previous usage?
+    // Or return the whole saved object? Let's return the IMod part for now.
+    const { files, ...mod } = modData;
+    return mod as IMod;
+  } catch (error: any) {
+    console.error('Error saving mod:', error);
+    throw new Error(`Failed to save mod: ${error.message}`);
+  }
+}
+
+// Get all mods (reads flat {id}.json files)
+export async function getMods(): Promise<IMod[]> {
+  try {
+    initStorage(); // Ensure mods directory exists
+    const mods: IMod[] = [];
+    if (!fs.existsSync(MODS_DIR)) {
+      return mods;
+    }
+    const modFiles = await fs.readdir(MODS_DIR);
+    
+    for (const modFilename of modFiles) {
+      if (modFilename.endsWith('.json')) {
+        const modFilePath = path.join(MODS_DIR, modFilename);
+        try {
+          // Read the flat mod data { ...IMod, files: [...] }
+          const modData = await fs.readJSON(modFilePath);
+          // Extract the mod part (excluding files)
+          const { files, ...mod } = modData; 
+          mods.push(mod as IMod);
+        } catch (err: any) {
+          console.error(`Error reading mod file ${modFilename}:`, err);
+        }
       }
-    ];
-
-    defaultVersions.forEach(version => {
-      this.createDoomVersion(version);
-    });
-  }
-
-  // DoomVersion operations
-  async getDoomVersions(): Promise<IDoomVersion[]> {
-    return Array.from(this.doomVersions.values());
-  }
-
-  async getDoomVersion(id: number): Promise<IDoomVersion | undefined> {
-    return this.doomVersions.get(id);
-  }
-
-  async getDoomVersionBySlug(slug: string): Promise<IDoomVersion | undefined> {
-    return Array.from(this.doomVersions.values()).find(
-      version => version.slug === slug
-    );
-  }
-
-  async createDoomVersion(version: InsertDoomVersion): Promise<IDoomVersion> {
-    const id = this.doomVersionIdCounter++;
-    const newVersion: IDoomVersion = { ...version, id };
-    this.doomVersions.set(id, newVersion);
-    return newVersion;
-  }
-
-  // Mod operations
-  async getMods(): Promise<IMod[]> {
-    return Array.from(this.mods.values());
-  }
-
-  async getModsByDoomVersion(doomVersionId: number): Promise<IMod[]> {
-    return Array.from(this.mods.values()).filter(
-      mod => mod.doomVersionId === doomVersionId
-    );
-  }
-
-  async getMod(id: number): Promise<IMod | undefined> {
-    return this.mods.get(id);
-  }
-
-  async createMod(mod: InsertMod): Promise<IMod> {
-    const id = this.modIdCounter++;
-    const newMod: IMod = { ...mod, id };
-    this.mods.set(id, newMod);
-    return newMod;
-  }
-
-  async updateMod(id: number, mod: Partial<IMod>): Promise<IMod | undefined> {
-    const existingMod = this.mods.get(id);
-    if (!existingMod) return undefined;
-    
-    const updatedMod: IMod = { ...existingMod, ...mod };
-    this.mods.set(id, updatedMod);
-    return updatedMod;
-  }
-
-  async deleteMod(id: number): Promise<boolean> {
-    return this.mods.delete(id);
-  }
-
-  // ModFile operations
-  async getModFiles(modId: number): Promise<IModFile[]> {
-    return Array.from(this.modFiles.values())
-      .filter(file => file.modId === modId)
-      .sort((a, b) => a.loadOrder - b.loadOrder);
-  }
-
-  async getModFile(id: number): Promise<IModFile | undefined> {
-    return this.modFiles.get(id);
-  }
-
-  async createModFile(file: InsertModFile): Promise<IModFile> {
-    const id = this.modFileIdCounter++;
-    const newFile: IModFile = { ...file, id };
-    this.modFiles.set(id, newFile);
-    return newFile;
-  }
-
-  async updateModFile(id: number, file: Partial<IModFile>): Promise<IModFile | undefined> {
-    const existingFile = this.modFiles.get(id);
-    if (!existingFile) return undefined;
-    
-    const updatedFile: IModFile = { ...existingFile, ...file };
-    this.modFiles.set(id, updatedFile);
-    return updatedFile;
-  }
-
-  async deleteModFile(id: number): Promise<boolean> {
-    return this.modFiles.delete(id);
+    }
+    return mods;
+  } catch (error: any) {
+    console.error('Error getting mods:', error);
+    return [];
   }
 }
 
-export const storage = new MemStorage();
+// Get a specific mod and its files (reads flat {id}.json)
+export async function getMod(modId: string): Promise<IMod & { files: IModFile[] }> {
+  try {
+    initStorage(); // Ensure mods directory exists
+    const modFilePath = path.join(MODS_DIR, `${modId}.json`);
+    if (!fs.existsSync(modFilePath)) {
+      throw new Error(`Mod ${modId} not found`);
+    }
+    // Read the flat data { ...IMod, files: [...] }
+    const modData = await fs.readJSON(modFilePath);
+    // Always ensure files is present and is an array
+    if (!Array.isArray(modData.files)) {
+      modData.files = [];
+    }
+    return modData as (IMod & { files: IModFile[] });
+  } catch (error: any) {
+    console.error(`Error getting mod ${modId}:`, error);
+    throw new Error(`Failed to get mod: ${error.message}`);
+  }
+}
+
+// Helper functions (ensureDir, readFile, writeFile, deleteFile) remain the same
+// Ensure directory exists
+async function ensureDir(dirPath: string): Promise<void> {
+  try {
+    await fs.ensureDir(dirPath);
+  } catch (error: any) {
+    console.error(`Error ensuring directory ${dirPath}:`, error);
+  }
+}
+
+// Read file content
+async function readFile<T>(filePath: string, defaultValue: T): Promise<T> {
+  try {
+    if (await fs.pathExists(filePath)) {
+      const content = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(content) as T;
+    }
+  } catch (error: any) {
+    console.error(`Error reading file ${filePath}:`, error);
+  }
+  return defaultValue;
+}
+
+// Write file content
+async function writeFile<T>(filePath: string, data: T): Promise<boolean> {
+  try {
+    await ensureDir(path.dirname(filePath));
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+    return true;
+  } catch (error: any) {
+    console.error(`Error writing file ${filePath}:`, error);
+    return false;
+  }
+}
+
+// Delete a file
+async function deleteFile(filePath: string): Promise<boolean> {
+  try {
+    if (await fs.pathExists(filePath)) {
+      await fs.remove(filePath); // fs.remove handles files and directories
+      return true;
+    }
+    return false; // File/Dir didn't exist
+  } catch (error: any) {
+    console.error(`Error deleting ${filePath}:`, error);
+    return false;
+  }
+}
+
+// Get path for a mod's JSON config file (used internally?)
+function getModFilePath(modId: string): string {
+  return path.join(MODS_DIR, `${modId}.json`);
+}
+
+// --- API-required stubs ---
+
+export async function getDoomVersion(id: string): Promise<IDoomVersion | undefined> {
+  try {
+    const versions = await getDoomVersions();
+    return versions.find(v => v.id === id);
+  } catch (error: any) {
+    console.error(`Error getting Doom version by id ${id}:`, error);
+    return undefined;
+  }
+}
+
+export async function createDoomVersion(data: any) {
+  // TODO: Implement createDoomVersion
+  return null;
+}
+
+export async function updateDoomVersion(id: string | number, data: any) {
+  // TODO: Implement updateDoomVersion
+  return null;
+}
+
+export async function deleteDoomVersion(id: string | number) {
+  // TODO: Implement deleteDoomVersion
+  return false;
+}
+
+export async function updateSettings(settings: any) {
+  // TODO: Implement updateSettings
+  return settings;
+}
+
+export async function getAvailableModFiles(): Promise<IModFile[] | undefined> {
+  // TODO: Implement getAvailableModFiles
+  return [];
+}
+
+export async function getModFilesByType(fileType: string): Promise<IModFile[] | undefined> {
+  // TODO: Implement getModFilesByType
+  return [];
+}
+
+export async function createModFile(file: any): Promise<IModFile | undefined> {
+  // TODO: Implement createModFile
+  return file;
+}
+
+export async function getModsByDoomVersion(versionId: string | number): Promise<IMod[] | undefined> {
+  // TODO: Implement getModsByDoomVersion
+  return [];
+}
+
+export async function getModFiles(modId: string | number): Promise<IModFile[] | undefined> {
+  // TODO: Implement getModFiles
+  return [];
+}
+
+export async function createMod(mod: any): Promise<IMod | undefined> {
+  // TODO: Implement createMod
+  return mod;
+}
+
+export async function updateMod(id: string | number, mod: any): Promise<IMod | undefined> {
+  // TODO: Implement updateMod
+  return mod;
+}
+
+export async function deleteMod(id: string | number): Promise<boolean | undefined> {
+  try {
+    const modFilePath = path.join(MODS_DIR, `${id}.json`);
+    console.log('[DEBUG] Attempting to delete mod file:', modFilePath);
+    if (await fs.pathExists(modFilePath)) {
+      await fs.remove(modFilePath);
+      console.log('[DEBUG] Deleted mod file:', modFilePath);
+      return true;
+    } else {
+      console.warn('[DEBUG] Mod file does not exist:', modFilePath);
+      return false;
+    }
+  } catch (error: any) {
+    console.error('Error deleting mod:', error);
+    return false;
+  }
+}
+
+export async function deleteModFile(id: string | number): Promise<boolean | undefined> {
+  // TODO: Implement deleteModFile
+  return false;
+}

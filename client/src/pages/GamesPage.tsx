@@ -6,7 +6,7 @@ import ViewToggle from '@/components/ViewToggle';
 import GameCard from '@/components/GameCard';
 import GameSettingsModal from '@/components/GameSettingsModal';
 import { gameService } from '@/lib/gameService';
-import { IMod, IDoomVersion } from '@shared/schema';
+import { IMod, IDoomVersion } from '../../../shared/schema';
 
 type ViewMode = 'grid' | 'list' | 'detail';
 
@@ -57,7 +57,7 @@ export const GamesPage: React.FC = () => {
   
   // Filter mods based on search query
   const filteredMods = mods.filter(mod => 
-    searchQuery ? mod.title.toLowerCase().includes(searchQuery.toLowerCase()) : true
+    searchQuery ? (mod.title || mod.name || '').toLowerCase().includes(searchQuery.toLowerCase()) : true
   );
   
   // Find version object for each mod

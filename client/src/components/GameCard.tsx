@@ -33,11 +33,11 @@ export const GameCard: React.FC<GameCardProps> = ({ mod, doomVersion, onSettings
   });
 
   const handleLaunch = () => {
-    launchMutation.mutate(mod.id);
+    launchMutation.mutate(Number(mod.id));
   };
 
   const handleSettings = () => {
-    onSettingsClick(mod.id);
+    onSettingsClick(Number(mod.id));
   };
 
   // Image fallback path if screenshot not available
