@@ -92,11 +92,12 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
     // Find the catalog file
     const catalogFile = catalogFiles.find(f => f.id === parseInt(catalogFileId + '', 10));
     if (!catalogFile) return;
-    // Update the file with catalog data, including name
+    
+    // Update the file with catalog data
     const newFiles = [...value];
     newFiles[index] = {
       ...newFiles[index],
-      name: catalogFile.name, // Ensure pretty name is set
+      name: catalogFile.name,
       filePath: catalogFile.filePath,
       fileType: catalogFile.fileType,
       fileName: catalogFile.fileName,
@@ -104,8 +105,6 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
       loadOrder: newFiles[index].loadOrder ?? 0,
     };
     onChange(newFiles);
-    // Also trigger handleUpdateFile to ensure React state is updated for the name
-    handleUpdateFile(index, 'name', catalogFile.name);
   };
   
   const handleBrowseFile = async (index: number) => {
