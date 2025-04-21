@@ -63,20 +63,20 @@ export const GameCard: React.FC<GameCardProps> = ({ mod, doomVersion, onSettings
           }}
         />
         {/* Dark gradient overlay - always visible */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
         
         {/* Game title and icon container - starts at the bottom */}
-        <div className="absolute inset-x-0 bottom-0 px-3 flex justify-between items-center 
-                      transform transition-transform duration-300 group-hover:translate-y-[-100px] z-10">
+        <div className="absolute inset-x-0 bottom-0 px-4 py-4 flex justify-between items-end 
+                      transform transition-transform duration-300 group-hover:translate-y-[-130px] z-10">
           {/* Game title */}
-          <h3 className="text-white font-mono text-lg font-bold">{mod.title}</h3>
+          <h3 className="text-white font-mono lg:text-lg font-bold">{mod.title}</h3>
           
           {/* Version icon */}
           <DoomVersionIcon version={doomVersion.slug} className="w-7 h-7" />
         </div>
         
         {/* Description panel that appears on hover */}
-        <div className="absolute inset-0 px-4 flex items-center justify-center 
+        <div className="absolute inset-0 px-4 py-4 flex items-end justify-center 
                       bg-black/60 opacity-0 group-hover:opacity-100 
                       transition-opacity duration-300 pt-24 pb-16">
           <p className="text-white text-sm">{truncatedDescription}</p>
