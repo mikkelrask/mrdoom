@@ -1,12 +1,11 @@
 import React from 'react';
 import doom from './doom.png';
 import doom2 from './doom2.png';
-import freedoom from './freedoom.png';
+import freedoom from './freedoom1.png';
 import freedoom2 from './freedoom2.png';
 import plutonia from './plutonia.png';
 import tnt from './tnt.png';
 
-// SVG icons for the Doom versions
 interface DoomIconProps {
   className?: string;
 }
