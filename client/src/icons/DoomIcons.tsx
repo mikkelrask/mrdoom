@@ -23,7 +23,7 @@ export const FreeDoomIcon: React.FC<DoomIconProps> = ({ className = "w-8 h-8" })
 );
 
 export const FreeDoom2Icon: React.FC<DoomIconProps> = ({ className = "w-8 h-8" }) => (
-  <img src={freedoom2} alt="FreeDoom 2 Icon" title="FREEDOOM: PHASE 1" className={className} />
+  <img src={freedoom2} alt="FreeDoom 2 Icon" title="FREEDOOM: PHASE 2" className={className} />
 );
 
 export const PlutoniaIcon: React.FC<DoomIconProps> = ({ className = "w-8 h-8" }) => (

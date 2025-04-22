@@ -18,7 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeVersion, onVersionSelect
   return (
     <div className="w-20 bg-[#0c1c2a] h-full flex flex-col items-center py-6 border-r border-[#162b3d]">
       {/* App Logo */}
-      <div className="w-12 h-12 mb-8 bg-[#162b3d] rounded-md flex items-center justify-center">
+      <div className="w-12 h-12 mb-12 bg-[#162b3d] rounded-md flex items-center justify-center">
         <img src={logo} alt="Logo" className="w-12 h-12" />
       </div>
       
@@ -37,7 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeVersion, onVersionSelect
           Array.isArray(versions) && versions.map((version: IDoomVersion) => (
             <div
               key={version.id}
-              className={`sidebar-icon ${activeVersion === version.slug ? 'active' : ''}`}
+              className={`sidebar-icon ${activeVersion === version.slug ? 'active' : ''} flex-col`}
               onClick={() => onVersionSelect(version.slug)}
             >
               <DoomVersionIcon version={version.slug} />

@@ -84,7 +84,7 @@ export const GamesPage: React.FC = () => {
           
           <div className="flex-1 overflow-y-auto p-4">
             {isModsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {Array(8).fill(0).map((_, i) => (
                   <div 
                     key={i} 
@@ -98,7 +98,7 @@ export const GamesPage: React.FC = () => {
                 <p className="text-[#e6e6e6]">
                   {activeVersion 
                     ? `No mods installed for this Doom version.` 
-                    : `No mods installed. Click "INSTALL" to add your first mod.`}
+                    : `No mods installed. Click "<a href="/install">INSTALL</a>" to add your first mod.`}
                 </p>
               </div>
             ) : (
