@@ -1,0 +1,20 @@
+[package]
+name = "mrdoom"
+version = "0.1.0"
+description = "Rip and Tear - the easy way!"
+authors = ["mikkelrask"]
+license = "beer-ware rev42"
+repository = "https://github.com/mikkelrask/mrdoom"
+edition = "2021"
+rust-version = "1.77.2"
+
+[build-dependencies]
+tauri-build = { version = "2.2.0", features = [] }
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+log = "0.4"
+tauri = { version = "2.5.0", features = [] }
+tauri-plugin-log = "2.0.0-rc.4"
+

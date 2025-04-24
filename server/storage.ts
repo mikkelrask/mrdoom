@@ -15,9 +15,9 @@ const MOD_FILE_CATALOG = path.join(CONFIG_DIR, 'modFileCatalogue.json'); // Corr
 const DEFAULT_SETTINGS: IAppSettings = {
   gzDoomPath: 'gzdoom', // Default to assuming gzdoom is in PATH
   theme: 'dark',
-  savegamesPath: '', // Add empty string defaults for optional properties
-  screenshotsPath: '',
-  defaultSourcePort: ''
+  savegamesPath: '~/.config/gzdoom/saves', // Add empty string defaults for optional properties
+  screenshotsPath: '~/Pictures/MRDoom/screenshots',
+  defaultSourcePort: 'GZDoom'
 };
 
 // Default Doom Versions
