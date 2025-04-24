@@ -1,9 +1,8 @@
-import { spawn } from 'child_process';
 import fs from 'fs-extra';
 import path from 'path';
 import { getSettings, getMod, getDoomVersion } from './storage';
 import { fileService } from './services/fileService';
-import { IModFile } from '@shared/schema';
+import { IModFile } from '../shared/schema';
 
 // Define a local type for launch options
 interface LaunchOptions {

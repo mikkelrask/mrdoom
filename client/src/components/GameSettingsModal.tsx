@@ -5,14 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X } from 'lucide-react';
 import { IMod, IModFile, IDoomVersion } from '@shared/schema';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { gameService } from '@/lib/gameService';
 import { useToast } from '@/hooks/use-toast';
 import ModFileList from './ModFileList';
 import LaunchOptions from './LaunchOptions';
-import { cn, slugify } from '@/lib/utils';
+import { slugify } from '@/lib/utils';
 
 interface GameSettingsModalProps {
   modId: number | null;

@@ -1,4 +1,4 @@
-import { IModFile, IMod, IDoomVersion, IAppSettings } from '@shared/schema';
+import { IModFile, IMod, IAppSettings } from '@shared/schema';
 
 export const api = {
   // Settings operations

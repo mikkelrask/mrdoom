@@ -1,6 +1,5 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { gameService } from '@/lib/gameService';
 import { DoomVersionIcon } from '@/icons/DoomIcons';
 import { IDoomVersion } from '@shared/schema';
 import logo from '../icons/logo.png';

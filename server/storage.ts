@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
-import { IAppSettings, IDoomVersion, IMod, IModFile } from '@shared/schema';
+import { IAppSettings, IDoomVersion, IMod, IModFile } from '../shared/schema';
 
 // Define storage paths (Aligned with local-structure.txt)
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'mrdoom');

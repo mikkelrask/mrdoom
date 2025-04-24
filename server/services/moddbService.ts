@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ModDBSearchResult, ModDBModDetails } from '@shared/schema';
+import { ModDBSearchResult, ModDBModDetails } from '../../shared/schema';
 
 // Service to handle ModDB API integration
 export class ModDBService {

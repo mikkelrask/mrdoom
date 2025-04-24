@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { IDoomVersion, IMod, IModFile } from '@shared/schema';
+import { IDoomVersion, IMod, IModFile } from '../shared/schema';
 import { storage } from './storage';
 
 // Safely import electron

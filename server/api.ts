@@ -4,7 +4,7 @@ import * as utils from './utils';
 import fs from 'fs/promises';
 import multer from 'multer';
 import path from 'path';
-import { IMod } from '@shared/schema';
+import { IMod } from '../shared/schema';
 
 // Import dialog conditionally
 let dialog: any;

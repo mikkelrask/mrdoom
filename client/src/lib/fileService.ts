@@ -1,8 +1,6 @@
 // This service is a client-side interface for handling files
 // For actual file operations, API requests are sent to the server
 
-import { apiRequest } from './queryClient';
-
 export const fileService = {
   // Upload a screenshot
   async uploadScreenshot(file: File): Promise<string> {

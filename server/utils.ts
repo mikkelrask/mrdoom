@@ -1,24 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-// Safely import electron or provide fallbacks
-let electronApp: any = null;
-try {
-  const electron = require('electron');
-  electronApp = electron.app;
-} catch (error) {
-  console.log('Electron not available, using fallback paths');
-}
-
 /**
  * Get the appropriate data directory for storing application data
  */
 export function getDataDirectory(): string {
-  if (electronApp) {
-    return path.join(electronApp.getPath('userData'), 'data');
-  }
-  
-  // Fallback for non-electron environments using ~/.config/mrdoom/data
   const homeDir = process.env.HOME || process.env.USERPROFILE || process.cwd();
   return path.join(homeDir, '.config', 'mrdoom', 'data');
 }

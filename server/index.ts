@@ -2,12 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { spawn } from 'child_process';
-import path from 'path';
 import * as storage from './storage';
-import { app, BrowserWindow } from 'electron';
-import { gameService } from './services/gameService';
-import { IMod, IModFile } from '@shared/schema';
-// import { getAppMainWindowUrl } from './utils'; // Removed unused import
+import { IModFile } from '../shared/schema';
 
 // Declare global electron object for TypeScript
 declare global {

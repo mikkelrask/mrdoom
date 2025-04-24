@@ -27,7 +27,7 @@ fn main() {
             // Start the Node.js server
             Command::new(&node_path)
                 .arg("index.js")
-                .current_dir("/usr/lib/mrdoom/_up_/dist/")
+                .current_dir("/usr/lib/mrdoom/_up_/dist/server")
                 .spawn()
                 .expect("Failed to start Node.js server");
 

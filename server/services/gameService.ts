@@ -2,7 +2,7 @@ import path from 'path';
 import os from 'os';
 import * as storage from '../storage';
 import { fileService } from './fileService';
-import { IMod, IModFile, IDoomVersion } from '@shared/schema';
+import { IMod, IModFile, IDoomVersion } from '../../shared/schema';
 import { MODS_DIR } from '../storage';
 
 // Service to handle game-related operations
