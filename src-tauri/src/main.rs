@@ -28,6 +28,8 @@ fn main() {
             Command::new(&node_path)
                 .arg("index.js")
                 .current_dir("/usr/lib/mrdoom/_up_/dist/server")
+                .env("NODE_ENV", "production")
+                .env("NPM_PREFIX", "/usr/lib/mrdoom/_up_/dist/node_modules")
                 .spawn()
                 .expect("Failed to start Node.js server");
 

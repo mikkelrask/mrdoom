@@ -8,12 +8,6 @@ import { IMod } from '../shared/schema';
 
 // Import dialog conditionally
 let dialog: any;
-try {
-  const electron = require('electron');
-  dialog = electron.dialog;
-} catch (e) {
-  console.log('Electron dialog not available in API');
-}
 
 // Get logger function for API requests
 function apiLogger(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -380,11 +374,9 @@ export function setupApiRoutes(app: express.Express): void {
       const options = req.body;
       
       if (dialog) {
-        // Use Electron dialog if available
         const result = await dialog.showOpenDialog(options);
         res.json(result);
       } else {
-        // In non-Electron environment, return a mock response
         console.log('Mock open dialog with options:', options);
         res.json({ 
           canceled: false, 

@@ -3,19 +3,7 @@ import path from 'path';
 import { IDoomVersion, IMod, IModFile } from '../shared/schema';
 import { storage } from './storage';
 
-// Safely import electron
-let electronApp: any = null;
-try {
-  const electron = require('electron');
-  electronApp = electron.app;
-} catch (error) {
-  console.log('Electron not available in gameConfig, using fallback paths');
-}
-
 function getDownloadsPath(): string {
-  if (electronApp) {
-    return electronApp.getPath('downloads');
-  }
   return path.join(process.cwd(), 'downloads');
 }
 
