@@ -4,7 +4,6 @@
   "version": "0.1.0",
   "identifier": "xyz.raske.mrdoom",
   "build": {
-    "frontendDist": "../dist/public",
     "devUrl": "http://localhost:5000",
     "beforeDevCommand": "pnpm run dev",
     "beforeBuildCommand": "pnpm run build && cd dist && pnpm install"
@@ -17,7 +16,9 @@
         "width": 1200,
         "height": 800,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "decorations": true,
+        "url": "http://localhost:5000/"
       }
     ],
     "security": {
@@ -35,7 +36,7 @@
       "icons/icon.ico"
     ],
     "resources": [
-      "../dist/**/*"
+      "../dist/"
     ]
   }
 }

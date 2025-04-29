@@ -4,15 +4,15 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "clean": "rm -rf dist node_modules",
+    "clean": "rm -rf dist node_modules src-tauri/target",
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/index.js",
+    "build": "pnpm install && vite build && NODE_ENV=production esbuild server/index.ts --platform=node --bundle --format=cjs --outfile=dist/index.cjs --external:express --external:fs-extra --external:node:*",
     "postbuild": "./post-build.sh",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "pnpm install && pnpm build && NODE_ENV=production tauri build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -52,6 +52,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "esbuild": "^0.25.2",
     "express": "^4.21.2",
     "fs-extra": "^11.3.0",
     "input-otp": "^1.4.2",
@@ -68,7 +69,9 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
     "wouter": "^3.3.5",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "vite": "5.4.14",
+    "@vitejs/plugin-react": "4.3.2"
   },
   "devDependencies": {
     "@replit/vite-plugin-cartographer": "^0.0.11",
@@ -86,12 +89,12 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@types/ws": "^8.5.13",
+    "@vitejs/plugin-react": "^4.3.2",
+    "esbuild": "^0.25.2",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.3",
-    "esbuild": "^0.25.2",
-    "@vitejs/plugin-react": "^4.3.2",
-    "vite": "^5.4.14",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "vite": "^5.4.14"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"

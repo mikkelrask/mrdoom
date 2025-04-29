@@ -16,8 +16,7 @@
     "zod": "^3.24.2",
     "child_process": "latest",
     "path": "latest",
-    "os": "latest",
-    "esbuild": "^0.25.2"
+    "os": "latest"
   },
   "devDependencies": {
     "typescript": "^4.0.0"

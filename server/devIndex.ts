@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { serveStatic, log } from "./static"; // Import from static.ts
+import { setupVite, log } from "./vite"; // Import setupVite for development
 import * as storage from './storage';
 import { IModFile } from '../shared/schema';
 import { spawn } from 'child_process'; // Import spawn
@@ -17,7 +17,7 @@ expressApp.use((req: Request, res: Response, next: NextFunction) => {
   const originalResJson = res.json;
   res.json = function (bodyJson: any, ...args: any[]) {
     capturedJsonResponse = bodyJson;
-    return originalResJson.call(res, bodyJson);
+    return originalResJson.apply(res, [bodyJson, ...args] as [any, ...any[]]);
   };
 
   res.on("finish", () => {
@@ -39,15 +39,15 @@ expressApp.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Make launchMod available for import
+// Make launchMod available for import (Keep this if needed by other parts, otherwise remove)
 export async function launchMod(modId: number) {
   try {
-    const mod = await storage.getMod(modId.toString());
+    const { mod } = await storage.getMod(modId.toString());
     if (!mod) {
       throw new Error(`Mod with ID ${modId} not found`);
     }
 
-    const modFiles: IModFile[] = (await storage.getModFiles(modId.toString())) || [];
+    const modFiles: IModFile[] = await storage.getModFiles(modId.toString());
     if (!modFiles.length) {
       throw new Error(`No mod files found for mod with ID ${modId}`);
     }
@@ -92,7 +92,7 @@ export async function launchMod(modId: number) {
 }
 
 (async () => {
-  console.log("Starting Production Server...");
+  console.log("Starting Development Server...");
   console.log("Current working directory:", process.cwd());
 
   const server = await registerRoutes(expressApp);
@@ -105,9 +105,9 @@ export async function launchMod(modId: number) {
     throw err;
   });
 
-  // Use serveStatic directly for production
-  console.log("Starting static server...");
-  serveStatic(expressApp);
+  // Always use setupVite in the development entry point
+  console.log("Starting Vite server...");
+  await setupVite(expressApp, server);
 
   const port = 5000;
   server.listen(
@@ -117,7 +117,7 @@ export async function launchMod(modId: number) {
       reusePort: true,
     },
     () => {
-      log(`Production server is running on port ${port}`);
+      log(`Development server is running on port ${port}`);
     }
   );
 })();
