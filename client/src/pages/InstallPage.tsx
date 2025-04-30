@@ -92,12 +92,12 @@ export const InstallPage: React.FC = () => {
   });
 
   const handleVersionSelect = (version: string) => {
-    setActiveVersion(version === activeVersion ? null : version);
+    setLocation(`/?version=${encodeURIComponent(version)}`); 
   };
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query); // Update local state (optional, for consistency)
-    setLocation(`/?search=${encodeURIComponent(query)}`); // Redirect to GamesPage with the search query
+    setSearchQuery(query); 
+    setLocation(`/?search=${encodeURIComponent(query)}`); 
   };
 
   const addFile = (filePath: string, fileName: string, fileType: string) => {

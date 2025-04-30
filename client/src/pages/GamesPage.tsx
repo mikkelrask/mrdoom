@@ -18,19 +18,27 @@ export const GamesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModId, setSelectedModId] = useState<number | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [location] = useLocation();
 
   useEffect(() => {
-    // Extract query parameters from the URL
-    const params = new URLSearchParams(window.location.search); // Use window.location.search
-    const query = params.get('search');
-    if (query) {
-      setSearchQuery(query); // Set searchQuery from URL
-      console.log('Search query from URL:', query);
+    // Extract query parameters from the window location
+    const params = new URLSearchParams(window.location.search);
+
+    // Handle search query
+    const search = params.get('search');
+    if (search) {
+      setSearchQuery(search);
     } else {
       setSearchQuery('');
     }
-  }, [location]);
+
+    // Handle version filter
+    const version = params.get('version');
+    if (version) {
+      setActiveVersion(version);
+    } else {
+      setActiveVersion(null);
+    }
+  }, []); // Only run on initial load
 
   // Fetch data
   const { data: versions = [] } = useQuery<IDoomVersion[]>({ 
