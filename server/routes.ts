@@ -28,15 +28,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === Mods API ===
   app.get("/api/mods", async (req, res) => {
-    // const { version } = req.query; // Version filtering commented out
-    
-    // if (version && typeof version === 'string') {
-      // const mods = await gameService.getModsByDoomVersion(version);
-      // return res.json(mods);
-    // }
-    
-    const mods = await gameService.getAllMods();
-    res.json(mods);
+    const { version, search } = req.query;
+
+    try {
+      let mods = await gameService.getAllMods();
+
+      // Filter by version if provided
+      if (version && typeof version === "string") {
+        mods = mods.filter((mod) => mod.doomVersionId === version);
+      }
+
+      // Filter by search query if provided
+      if (search && typeof search === "string") {
+        mods = mods.filter((mod) =>
+          (mod.title || mod.name || "").toLowerCase().includes(search.toLowerCase())
+        );
+      }
+
+      res.json(mods);
+    } catch (error) {
+      console.error("Error fetching mods:", error);
+      res.status(500).json({ error: "Failed to fetch mods" });
+    }
   });
 
   app.get("/api/mods/:id", async (req, res) => {
@@ -161,93 +174,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // === ModDB API ===
-  app.get("/api/moddb/search", async (req, res) => {
-    const { query, game } = req.query;
-    
-    if (!query || typeof query !== 'string') {
-      return res.status(400).json({ message: "Search query is required" });
-    }
-    
-    const gameFilter = typeof game === 'string' ? game : undefined;
-    const results = await moddbService.searchMods(query, gameFilter);
-    
-    res.json(results);
-  });
-
-  app.get("/api/moddb/mods/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid mod ID" });
-    }
-    
-    const mod = await moddbService.getModDetails(id);
-    
-    if (!mod) {
-      return res.status(404).json({ message: "Mod not found on ModDB" });
-    }
-    
-    res.json(mod);
-  });
-
-  app.get("/api/moddb/popular", async (req, res) => {
-    const mods = await moddbService.getPopularDoomMods();
-    res.json(mods);
-  });
-
-  app.get("/api/moddb/latest", async (req, res) => {
-    const mods = await moddbService.getLatestDoomMods();
-    res.json(mods);
-  });
-
-  // === Dialog API === (For file selection)
-  app.post("/api/dialog/open", async (req, res) => {
+  // === Settings API ===
+  app.get("/api/settings", async (req, res) => {
     try {
-      // Check if we're running in Electron
-      if (!global.electron) {
-        return res.status(400).json({ 
-          canceled: true, 
-          filePaths: [],
-          message: "File dialogs are only available in the Electron app" 
-        });
-      }
-      
-      const options = req.body;
-      const result = await global.electron.dialog.showOpenDialog(options);
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error showing open dialog:", error);
-      res.status(500).json({ 
-        canceled: true, 
-        filePaths: [],
-        message: error.message || "Failed to show open dialog" 
-      });
+      const settings = await storage.getSettings();
+      // Return a default empty object if not found
+      res.json(settings || {});
+    } catch (error) {
+      console.error("Failed to load settings:", error);
+
+      res.status(500).json({ message: "Failed to load settings" });
     }
   });
 
-  app.post("/api/dialog/save", async (req, res) => {
+  app.put("/api/settings", async (req, res) => {
     try {
-      // Check if we're running in Electron
-      if (!global.electron) {
-        return res.status(400).json({ 
-          canceled: true, 
-          filePath: "",
-          message: "File dialogs are only available in the Electron app" 
-        });
+      const newSettings = req.body;
+      if (!newSettings) {
+        return res.status(400).json({ message: "No settings data provided" });
       }
-      
-      const options = req.body;
-      const result = await global.electron.dialog.showSaveDialog(options);
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error showing save dialog:", error);
-      res.status(500).json({ 
-        canceled: true, 
-        filePath: "",
-        message: error.message || "Failed to show save dialog" 
-      });
+      const updatedSettings = await storage.saveSettings(newSettings);
+      res.json(updatedSettings);
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+
+      res.status(500).json({ message: "Failed to save settings" });
     }
+
   });
+
 
   return httpServer;
 }
