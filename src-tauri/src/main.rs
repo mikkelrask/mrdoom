@@ -13,7 +13,7 @@ fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: 
                 return true;
             },
             Err(e) if e.kind() == ErrorKind::ConnectionRefused => {
-                println!("Server at {}:{} not ready yet, retrying...", host, port);
+                println!("Waiting for server to spawn ({}:{}) ...", host, port);
             },
             Err(e) => {
                 println!("Error connecting to server: {}", e);
