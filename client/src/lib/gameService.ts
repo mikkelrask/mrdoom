@@ -6,14 +6,6 @@ import type {
   IAppSettings 
 } from '@shared/schema';
 
-export interface IMod {
-  id: number;
-  name: string;
-  title?: string;
-  filePath: string;
-  doomVersionId: string; // Changed from optional number to string
-}
-
 // Helper function to handle API errors
 async function handleApiResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {

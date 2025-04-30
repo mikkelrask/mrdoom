@@ -10,7 +10,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeVersion, onVersionSelect }) => {
-  const { data: versions = [], isLoading } = useQuery({
+  const { data: versions = [], isLoading } = useQuery<IDoomVersion[]>({
     queryKey: ['/api/versions'],
   });
 
@@ -32,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeVersion, onVersionSelect
               className={`sidebar-icon ${activeVersion === version.id ? 'active' : ''}`}
               onClick={() => onVersionSelect(version.id)}
             >
-              <DoomVersionIcon version={version.slug} /> {/* Ensure version.slug is passed */}
+              <DoomVersionIcon version={version.slug} /> 
               <span className="sr-only">{version.name}</span>
             </div>
           ))
