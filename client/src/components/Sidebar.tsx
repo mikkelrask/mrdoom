@@ -30,9 +30,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeVersion, onVersionSelect
             <div
               key={version.id}
               className={`sidebar-icon ${activeVersion === version.id ? 'active' : ''}`}
-              onClick={() => onVersionSelect(version.id)} // Call onVersionSelect when clicked
+              onClick={() => onVersionSelect(version.id)}
             >
-              <span>{version.name}</span>
+              <DoomVersionIcon version={version.slug} /> {/* Ensure version.slug is passed */}
+              <span className="sr-only">{version.name}</span>
             </div>
           ))
         )}
