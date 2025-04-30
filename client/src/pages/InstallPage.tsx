@@ -96,7 +96,8 @@ export const InstallPage: React.FC = () => {
   };
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
+    setSearchQuery(query); // Update local state (optional, for consistency)
+    setLocation(`/?search=${encodeURIComponent(query)}`); // Redirect to GamesPage with the search query
   };
 
   const addFile = (filePath: string, fileName: string, fileType: string) => {

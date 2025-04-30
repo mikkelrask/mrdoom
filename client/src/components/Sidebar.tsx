@@ -6,7 +6,7 @@ import logo from '../icons/logo.png';
 
 interface SidebarProps {
   activeVersion: string | null;
-  onVersionSelect: (version: string) => void;
+  onVersionSelect: (versionId: string) => void; // Pass numeric version ID
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeVersion, onVersionSelect }) => {
@@ -36,8 +36,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeVersion, onVersionSelect
           Array.isArray(versions) && versions.map((version: IDoomVersion) => (
             <div
               key={version.id}
-              className={`sidebar-icon ${activeVersion === version.slug ? 'active' : ''} flex-col`}
-              onClick={() => onVersionSelect(version.slug)}
+              className={`sidebar-icon ${activeVersion === version.id ? 'active' : ''} flex-col`}
+              onClick={() => onVersionSelect(version.id)} // Pass numeric ID
             >
               <DoomVersionIcon version={version.slug} />
               <span className="sr-only">{version.name}</span>

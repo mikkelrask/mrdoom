@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import ViewToggle from '@/components/ViewToggle';
@@ -17,24 +18,40 @@ export const GamesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModId, setSelectedModId] = useState<number | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  
+  const [location] = useLocation();
+
+  useEffect(() => {
+    // Extract query parameters from the URL
+    const params = new URLSearchParams(window.location.search); // Use window.location.search
+    const query = params.get('search');
+    if (query) {
+      setSearchQuery(query); // Set searchQuery from URL
+      console.log('Search query from URL:', query);
+    } else {
+      setSearchQuery('');
+    }
+  }, [location]);
+
   // Fetch data
   const { data: versions = [] } = useQuery<IDoomVersion[]>({ 
     queryKey: ['/api/versions'],
   });
   
   const { data: mods = [], isLoading: isModsLoading } = useQuery<IMod[]>({
-    queryKey: ['/api/mods', activeVersion],
-    queryFn: () => gameService.getMods(activeVersion || undefined),
+    queryKey: ['/api/mods', activeVersion, searchQuery],
+    queryFn: () => gameService.getMods(activeVersion || undefined, searchQuery || undefined),
+    enabled: true, 
   });
-  
+
   // Event handlers
   const handleVersionSelect = (version: string) => {
     setActiveVersion(version === activeVersion ? null : version);
+    setSearchQuery(''); // Clear search query when switching versions
   };
   
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    setActiveVersion(null); // Clear active version when searching
   };
   
   const handleViewModeChange = (mode: ViewMode) => {
