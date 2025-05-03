@@ -27,24 +27,67 @@ fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: 
 }
 
 fn main() {
-    env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
-
-    if env::var("WAYLAND_DISPLAY").is_ok() {
-        env::set_var("MOZ_ENABLE_WAYLAND", "1"); 
+    // Platform-specific environment variables
+    #[cfg(target_os = "linux")]
+    {
+        env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        
+        if env::var("WAYLAND_DISPLAY").is_ok() {
+            env::set_var("MOZ_ENABLE_WAYLAND", "1"); 
+        }
+        
+        env::set_var("MESA_GL_VERSION_OVERRIDE", "4.5");
+        env::set_var("MOZ_GMP_PATH", "/usr/lib/mozilla/plugins");
     }
+    
+    // Common environment variables for all platforms
+    env::set_var("RUST_BACKTRACE", "1");
+    env::set_var("RUST_LOG", "full");
 
     tauri::Builder::default()
-        .setup(|_app| {
-            let node_path = PathBuf::from("/usr/lib/mrdoom/_up_/dist/bin/node");
-            env::set_var("MESA_GL_VERSION_OVERRIDE", "4.5");
-            env::set_var("MOZ_GMP_PATH", "/usr/lib/mozilla/plugins");
-            env::set_var("RUST_BACKTRACE", "1");
-            env::set_var("RUST_LOG", "full");
-
+        .setup(|app| {
+            // Get the resource directory based on the platform
+            let resource_dir = app.path_resolver().resource_dir()
+                .expect("Failed to get resource directory");
+            
+            // Determine Node path and working directory
+            let (node_path, work_dir) = {
+                #[cfg(target_os = "linux")]
+                {
+                    // Check if we're running from the packaged app or in development
+                    let packaged_node = resource_dir.join("node").join("bin").join("node");
+                    if packaged_node.exists() {
+                        // Use packaged node in the resource directory
+                        (packaged_node, resource_dir.join("app"))
+                    } else {
+                        // Fallback to original Linux paths for development
+                        (PathBuf::from("/usr/lib/mrdoom/_up_/dist/bin/node"), 
+                         PathBuf::from("/usr/lib/mrdoom/_up_/dist"))
+                    }
+                }
+                
+                #[cfg(target_os = "windows")]
+                {
+                    // For Windows, use node.exe from the resource directory
+                    (resource_dir.join("node").join("node.exe"), 
+                     resource_dir.join("app"))
+                }
+                
+                #[cfg(target_os = "macos")]
+                {
+                    // For macOS, use node from the resource directory
+                    (resource_dir.join("node").join("bin").join("node"), 
+                     resource_dir.join("app"))
+                }
+            };
+            
+            println!("Using Node path: {:?}", node_path);
+            println!("Using working directory: {:?}", work_dir);
+            
             if !node_path.exists() {
                 panic!("Node binary not found at: {:?}", node_path);
             }
-            let work_dir = PathBuf::from("/usr/lib/mrdoom/_up_/dist");
+            
             Command::new(&node_path)
                 .arg("index.cjs")
                 .current_dir(&work_dir)
@@ -66,4 +109,3 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-

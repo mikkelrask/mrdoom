@@ -1,0 +1,108 @@
+name: Build MRDOOM App
+
+on:
+  push:
+    branches: [ production ]
+  pull_request:
+    branches: [ production ]
+  workflow_dispatch:
+
+jobs:
+  build-all:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-20.04, macos-latest, windows-latest]
+        include:
+          - platform: ubuntu-20.04
+            node-download: "https://nodejs.org/dist/v18.17.1/node-v18.17.1-linux-x64.tar.gz"
+            artifact-name: linux-build
+          - platform: macos-latest
+            node-download: "https://nodejs.org/dist/v18.17.1/node-v18.17.1-darwin-x64.tar.gz"
+            artifact-name: macos-build
+          - platform: windows-latest
+            node-download: "https://nodejs.org/dist/v18.17.1/node-v18.17.1-win-x64.zip"
+            artifact-name: windows-build
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      # Install Linux dependencies
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+      
+      # Setup Node.js for building the app
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      # Install Rust
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+        
+      # Run the main build
+      - name: Build the project
+        run: npm run build
+        
+      # Setup Node.js binary for bundling
+      - name: Setup Node.js binary
+        shell: bash
+        run: |
+          mkdir -p src-tauri/resources
+          
+          # Platform-specific download and extraction
+          if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
+            curl -LO "${{ matrix.node-download }}"
+            powershell -Command "Expand-Archive -Path \"*.zip\" -DestinationPath \".\""
+            powershell -Command "Move-Item -Path \"node-v18.17.1-win-x64\" -Destination \"src-tauri/resources/node\""
+          else
+            curl -L "${{ matrix.node-download }}" -o node.tar.gz
+            tar -xzf node.tar.gz
+            mv node-v18.17.1-* src-tauri/resources/node
+            chmod -R +x src-tauri/resources/node/bin/
+          fi
+      
+      # Create server folder structure and install dependencies in one step
+      - name: Prepare server components
+        shell: bash
+        run: |
+          # Create necessary directories first
+          mkdir -p src-tauri/resources/app
+          
+          # Install server dependencies directly in the destination folder
+          cp server/server-package.json src-tauri/resources/app/package.json
+          npm install --prefix ./src-tauri/resources/app --omit=dev
+          
+          # Copy server components directly to the destination
+          cp dist/index.cjs src-tauri/resources/app/ || true
+          cp -r server/shared src-tauri/resources/app/shared || true
+          cp -r dist/public src-tauri/resources/app/public || true
+      
+      # Build with Tauri
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: "App v__VERSION__"
+          releaseBody: "See the assets to download this version and install."
+          releaseDraft: true
+          prerelease: false
+      
+      # Upload artifacts
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: src-tauri/target/release/bundle/
