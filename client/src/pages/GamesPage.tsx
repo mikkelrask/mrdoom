@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import ViewToggle from '@/components/ViewToggle';
@@ -17,24 +18,48 @@ export const GamesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedModId, setSelectedModId] = useState<number | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  
+
+  useEffect(() => {
+    // Extract query parameters from the window location
+    const params = new URLSearchParams(window.location.search);
+
+    // Handle search query
+    const search = params.get('search');
+    if (search) {
+      setSearchQuery(search);
+    } else {
+      setSearchQuery('');
+    }
+
+    // Handle version filter
+    const version = params.get('version');
+    if (version) {
+      setActiveVersion(version);
+    } else {
+      setActiveVersion(null);
+    }
+  }, []); // Only run on initial load
+
   // Fetch data
   const { data: versions = [] } = useQuery<IDoomVersion[]>({ 
     queryKey: ['/api/versions'],
   });
   
   const { data: mods = [], isLoading: isModsLoading } = useQuery<IMod[]>({
-    queryKey: ['/api/mods', activeVersion],
-    queryFn: () => gameService.getMods(activeVersion || undefined),
+    queryKey: ['/api/mods', activeVersion, searchQuery],
+    queryFn: () => gameService.getMods(activeVersion || undefined, searchQuery || undefined),
+    enabled: true, 
   });
-  
+
   // Event handlers
   const handleVersionSelect = (version: string) => {
     setActiveVersion(version === activeVersion ? null : version);
+    setSearchQuery(''); // Clear search query when switching versions
   };
   
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    setActiveVersion(null); // Clear active version when searching
   };
   
   const handleViewModeChange = (mode: ViewMode) => {

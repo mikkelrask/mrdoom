@@ -16,6 +16,7 @@
         "width": 1200,
         "height": 800,
         "resizable": true,
+        "scale": true,
         "fullscreen": false,
         "decorations": true,
         "url": "http://localhost:5000/"
@@ -36,7 +37,7 @@
       "icons/icon.ico"
     ],
     "resources": [
-      "../dist/"
+      "resources"
     ]
   }
 }

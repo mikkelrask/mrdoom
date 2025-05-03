@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-
+import { fileService } from '@/lib/fileService';
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -87,14 +87,18 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
   };
   
   // Handle folder browse (mock implementation)
-  const handleBrowse = (settingName: string) => {
-    // In a real Electron app, you would use dialog.showOpenDialog
-    // For now, we'll just show a toast
-    toast({
-      title: 'Browse Folders',
-      description: `In a real app, this would open a folder picker for '${settingName}'`,
-    });
+  const handleBrowse = async (settingName: string) => {
+    const currentPath = settings[settingName as keyof typeof settings] as string | undefined;
+    const result = await fileService.openDirectory(currentPath);
+    if (result) {
+      setSettings(prev => ({
+        ...prev,
+        [settingName]: result,
+      }));
+    }
   };
+  
+
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -127,7 +131,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
               </div>
               <Button 
                 className="mt-7 bg-[#0c1c2a] hover:bg-[#1f3547]"
-                onClick={() => handleBrowse('gzDoomPath')}
+                onClick={() => handleBrowse('gzDoomPath')} // Changed to handleBrowse
               >
                 Browse...
               </Button>
@@ -146,7 +150,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
               </div>
               <Button 
                 className="mt-7 bg-[#0c1c2a] hover:bg-[#1f3547]"
-                onClick={() => handleBrowse('saveDirectory')}
+                onClick={() => handleBrowse('saveDirectory')} // Changed to handleBrowse
               >
                 Browse...
               </Button>
@@ -165,7 +169,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
               </div>
               <Button 
                 className="mt-7 bg-[#0c1c2a] hover:bg-[#1f3547]"
-                onClick={() => handleBrowse('modsDirectory')}
+                onClick={() => handleBrowse('modsDirectory')} // Changed to handleBrowse
               >
                 Browse...
               </Button>
@@ -184,7 +188,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ isOpen, onClose 
               </div>
               <Button 
                 className="mt-7 bg-[#0c1c2a] hover:bg-[#1f3547]"
-                onClick={() => handleBrowse('screenshotsDirectory')}
+                onClick={() => handleBrowse('screenshotsDirectory')} // Changed to handleBrowse
               >
                 Browse...
               </Button>

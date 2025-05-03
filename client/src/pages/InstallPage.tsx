@@ -92,11 +92,12 @@ export const InstallPage: React.FC = () => {
   });
 
   const handleVersionSelect = (version: string) => {
-    setActiveVersion(version === activeVersion ? null : version);
+    setLocation(`/?version=${encodeURIComponent(version)}`); 
   };
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
+    setSearchQuery(query); 
+    setLocation(`/?search=${encodeURIComponent(query)}`); 
   };
 
   const addFile = (filePath: string, fileName: string, fileType: string) => {

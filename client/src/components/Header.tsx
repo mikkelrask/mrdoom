@@ -4,7 +4,7 @@ import { Settings, Menu } from 'lucide-react';
 import SettingsDialog from './SettingsDialog';
 
 interface HeaderProps {
-  onSearch: (query: string) => void;
+  onSearch: (query: string, includeAllMods?: boolean) => void; // Add a flag to include all mods
 }
 
 export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
@@ -14,7 +14,7 @@ export const Header: React.FC<HeaderProps> = ({ onSearch }) => {
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(searchQuery);
+    onSearch(searchQuery, true); // Pass `true` to indicate searching all mods
   };
   
   const openSettings = () => {

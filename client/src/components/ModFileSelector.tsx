@@ -109,62 +109,34 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
   
   const handleBrowseFile = async (index: number) => {
     try {
-      const result = await gameService.showOpenDialog({
-        properties: ['openFile'],
-        filters: [
-          { name: 'DOOM Files', extensions: ['wad', 'pk3', 'ipk3', 'deh', 'bex', 'zip'] }
-        ]
-      });
-      
-      if (!result.canceled && result.filePaths.length > 0) {
-        const filePath = result.filePaths[0];
-        const fileName = filePath.split('/').pop() || filePath.split('\\').pop() || filePath;
-        
-        // Update the file
-        handleUpdateFile(index, 'filePath', filePath);
-        
-        // Also update the name if it's empty
-        if (!value[index].name) {
-          handleUpdateFile(index, 'name', fileName);
+        const result = await gameService.showOpenDialog({
+            properties: ['openFile'],
+            filters: [
+                { name: 'DOOM Files', extensions: ['wad', 'pk3', 'ipk3', 'deh', 'bex', 'zip'] }
+            ]
+        });
+
+        if (!result.canceled && result.filePaths.length > 0) {
+            const filePath = result.filePaths[0];
+            const fileName = filePath.split(/[\\/]/).pop() || filePath;
+
+            // Update the file path
+            handleUpdateFile(index, 'filePath', filePath);
+
+            // If the name is empty, update it with the file name
+            if (!value[index].name) {
+                handleUpdateFile(index, 'name', fileName);
+            }
         }
-        
-        // Add to catalog if it doesn't exist
-        const existsInCatalog = catalogFiles.some(f => f.filePath === filePath);
-        if (!existsInCatalog) {
-          try {
-            // Determine file type from extension
-            let fileType = 'WAD';
-            const ext = fileName.toLowerCase().split('.').pop() || '';
-            if (['pk3', 'ipk3', 'zip'].includes(ext)) fileType = 'PK3';
-            else if (['deh', 'bex'].includes(ext)) fileType = 'DEH';
-            
-            // Create new catalog entry
-            const newCatalogFile = await gameService.addModFileToCatalog({
-              name: fileName,
-              filePath,
-              fileType,
-              loadOrder: 0
-            });
-            
-            setCatalogFiles([...catalogFiles, newCatalogFile]);
-            toast({
-              title: 'Success',
-              description: 'File added to catalog',
-            });
-          } catch (error) {
-            console.error('Failed to add file to catalog:', error);
-          }
-        }
-      }
     } catch (error) {
-      console.error('Failed to open file dialog:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to open file dialog',
-        variant: 'destructive',
-      });
+        console.error('Failed to open file dialog:', error);
+        toast({
+            title: 'Error',
+            description: 'Failed to open file dialog',
+            variant: 'destructive',
+        });
     }
-  };
+};
   
   return (
     <div className="space-y-3">

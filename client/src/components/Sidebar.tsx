@@ -6,11 +6,11 @@ import logo from '../icons/logo.png';
 
 interface SidebarProps {
   activeVersion: string | null;
-  onVersionSelect: (version: string) => void;
+  onVersionSelect: (versionId: string) => void; // Pass numeric version ID
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeVersion, onVersionSelect }) => {
-  const { data: versions = [], isLoading } = useQuery({
+  const { data: versions = [], isLoading } = useQuery<IDoomVersion[]>({
     queryKey: ['/api/versions'],
   });
 
@@ -24,22 +24,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeVersion, onVersionSelect
       {/* Doom Version Filters */}
       <div className="flex flex-col space-y-6">
         {isLoading ? (
-          // Loading skeleton
-          Array(6).fill(0).map((_, i) => (
-            <div 
-              key={i} 
-              className="sidebar-icon w-12 h-12 rounded-md flex items-center justify-center animate-pulse bg-[#162b3d]"
-            />
-          ))
+          <p>Loading...</p>
         ) : (
-          // Render version icons
-          Array.isArray(versions) && versions.map((version: IDoomVersion) => (
+          versions.map((version) => (
             <div
               key={version.id}
-              className={`sidebar-icon ${activeVersion === version.slug ? 'active' : ''} flex-col`}
-              onClick={() => onVersionSelect(version.slug)}
+              className={`sidebar-icon ${activeVersion === version.id ? 'active' : ''}`}
+              onClick={() => onVersionSelect(version.id)}
             >
-              <DoomVersionIcon version={version.slug} />
+              <DoomVersionIcon version={version.slug} /> 
               <span className="sr-only">{version.name}</span>
             </div>
           ))

@@ -6,14 +6,6 @@ import type {
   IAppSettings 
 } from '@shared/schema';
 
-export interface IMod {
-  id: number;
-  name: string;
-  title?: string;
-  filePath: string;
-  doomVersionId: string; // Changed from optional number to string
-}
-
 // Helper function to handle API errors
 async function handleApiResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -70,11 +62,12 @@ export const gameService = {
   },
   
   // Mod operations
-  async getMods(versionSlug?: string): Promise<IMod[]> {
-    const url = versionSlug 
-      ? `/api/mods?version=${versionSlug}` 
-      : '/api/mods';
-    
+  async getMods(versionSlug?: string, searchQuery?: string): Promise<IMod[]> {
+    const params = new URLSearchParams();
+    if (versionSlug) params.append('version', versionSlug);
+    if (searchQuery) params.append('search', searchQuery);
+  
+    const url = `/api/mods?${params.toString()}`;
     const response = await fetch(url);
     return handleApiResponse<IMod[]>(response);
   },
