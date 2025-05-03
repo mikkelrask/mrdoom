@@ -103,7 +103,7 @@ jobs:
       # Upload artifacts only if the build directory exists
       - name: Upload artifacts
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
           path: src-tauri/target/release/bundle/
