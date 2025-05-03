@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Type "yes" to confirm merge'
+        description: 'Type "yes master" to confirm merge'
         required: true
 
 jobs:
   merge:
-    if: ${{ github.event.inputs.confirm == 'yes' }}
+    if: ${{ github.event.inputs.confirm == 'yes master' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
