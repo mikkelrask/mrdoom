@@ -8,7 +8,6 @@
     "clean": "rm -rf dist node_modules src-tauri/target",
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build && NODE_ENV=production esbuild server/index.ts --platform=node --bundle --format=cjs --outfile=dist/index.cjs --external:express --external:fs-extra --external:node:*",
-    "postbuild": "./post-build.sh",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "tauri": "tauri",
