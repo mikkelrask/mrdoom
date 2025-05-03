@@ -27,33 +27,33 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v3
-      
+
       # Install Linux dependencies
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-20.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
-      
+
       # Setup Node.js for building the app
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
-          
+
       # Install Rust
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        
+
       # Install dependencies
       - name: Install dependencies
         run: npm install
-        
+
       # Run the main build
       - name: Build the project
         run: npm run build
-        
+
       # Setup Node.js binary for bundling
       - name: Setup Node.js binary
         shell: bash
@@ -71,7 +71,7 @@ jobs:
             mv node-v18.17.1-* src-tauri/resources/node
             chmod -R +x src-tauri/resources/node/bin/
           fi
-      
+
       # Create server folder structure and install dependencies in one step
       - name: Prepare server components
         shell: bash
@@ -87,7 +87,7 @@ jobs:
           cp dist/index.cjs src-tauri/resources/app/ || true
           cp -r server/shared src-tauri/resources/app/shared || true
           cp -r dist/public src-tauri/resources/app/public || true
-      
+
       # Build with Tauri
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -99,10 +99,12 @@ jobs:
           releaseBody: "See the assets to download this version and install."
           releaseDraft: true
           prerelease: false
-      
-      # Upload artifacts
+
+      # Upload artifacts only if the build directory exists
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3.1.0
+        if: success() && exists('src-tauri/target/release/bundle/')
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.artifact-name }}
           path: src-tauri/target/release/bundle/
+
