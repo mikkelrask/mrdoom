@@ -12,7 +12,7 @@
     "check": "tsc",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "pnpm install && pnpm build && NODE_ENV=production tauri build"
+    "tauri:build": "NODE_ENV=production tauri build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
