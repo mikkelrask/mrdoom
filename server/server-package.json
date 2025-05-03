@@ -1,6 +1,6 @@
 {
-  "name": "server",
-  "version": "1.0.0",
+  "name": "MRDOOM - Server",
+  "version": "0.1.0",
   "description": "Server-side dependencies for the MRDOOM app",
   "main": "index.ts",
   "type": "module",

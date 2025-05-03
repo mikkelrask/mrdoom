@@ -1,0 +1,28 @@
+name: Merge main into production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "yes" to confirm merge'
+        required: true
+
+jobs:
+  merge:
+    if: ${{ github.event.inputs.confirm == 'yes' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge main into production
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git fetch origin production
+          git checkout production
+          git merge origin/main --no-ff -m "chore: merge main into production [skip ci]"
+          git push origin production

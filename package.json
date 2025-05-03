@@ -1,9 +1,10 @@
 {
-  "name": "rest-express",
-  "version": "1.0.0",
+  "name": "MRDOOM - Modded Rip And Tear",
+  "version": "0.1.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
+    "bump-version": "scripts/bump-version.mjs",
     "clean": "rm -rf dist node_modules src-tauri/target",
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "pnpm install && vite build && NODE_ENV=production esbuild server/index.ts --platform=node --bundle --format=cjs --outfile=dist/index.cjs --external:express --external:fs-extra --external:node:*",
