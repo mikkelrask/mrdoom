@@ -87,18 +87,10 @@ jobs:
           cp dist/index.cjs src-tauri/resources/app/ || true
           cp -r server/shared src-tauri/resources/app/shared || true
           cp -r dist/public src-tauri/resources/app/public || true
-
-      # Build with Tauri
+          
+      # Build the actual app
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v__VERSION__
-          releaseName: "App v__VERSION__"
-          releaseBody: "See the assets to download this version and install."
-          releaseDraft: true
-          prerelease: false
+        run: npx tauri build
 
       # Upload artifacts only if the build directory exists
       - name: Upload artifacts
