@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::{
     env,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::Command,
     thread,
     time::{Duration, Instant},
@@ -44,7 +44,7 @@ fn main() {
     env::set_var("RUST_LOG", "full");
 
     Builder::default()
-        .setup(|app: &mut App| {
+        .setup(|_app: &mut App| {
             // Directly use the path to your resources (dist, _up_, etc.)
             let resource_dir = env::var("RESOURCES_DIR")
                 .map(|v| PathBuf::from(v))
