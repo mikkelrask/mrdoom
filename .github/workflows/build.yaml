@@ -97,7 +97,7 @@ jobs:
           cp dist/index.cjs src-tauri/resources/app/
           cp -r shared src-tauri/resources/app/shared
           cp -r dist/public src-tauri/resources/app/public
-          cp -r dist/node_modules src-tauri/resources/app/node_modules
+          rsync -a dist/node_modules/ src-tauri/resources/app/node_modules/
 
       - name: Check final app bundle structure
         run: |
