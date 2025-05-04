@@ -86,19 +86,19 @@ jobs:
 
           # Copy and install server files
           cp server/server-package.json dist/package.json
-          cd dist
-          pnpm install --prod
-          cd ..
+          npm install --omit=dev --prefix=dist
 
           # Validate outputs
           test -f dist/index.cjs || (echo "❌ index.cjs missing" && exit 1)
           test -d dist/public || (echo "❌ public folder missing" && exit 1)
           test -d dist/node_modules || (echo "❌ node_modules missing" && exit 1)
 
+          tree dist
           # Copy required assets
           cp dist/index.cjs src-tauri/resources/app/
           cp -r shared src-tauri/resources/app/shared
           cp -r dist/public src-tauri/resources/app/public
+          ls -lah dist/node_modules
           cp -r dist/node_modules src-tauri/resources/app/node_modules
 
       - name: Check final app bundle structure
