@@ -1,8 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 use std::{
     env,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
     thread,
     time::{Duration, Instant},
@@ -45,42 +44,46 @@ fn main() {
     env::set_var("RUST_LOG", "full");
 
     Builder::default()
-        .setup(|app_handle| {
-            let resource_dir = app_handle
-                .path_resolver()
-                .resolve_resource("resources")
-                .expect("Could not resolve resource dir");
-        
+        .setup(|app: &mut App| {
+            // Directly use the path to your resources (dist, _up_, etc.)
+            let resource_dir = env::var("RESOURCES_DIR")
+                .map(|v| PathBuf::from(v))
+                .unwrap_or_else(|_| PathBuf::from("/usr/lib/mrdoom/_up_/dist"));
+
+            // Define the correct node path based on your OS
             #[cfg(target_os = "linux")]
-            {
-                std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
-                if std::env::var("WAYLAND_DISPLAY").is_ok() {
-                    std::env::set_var("MOZ_ENABLE_WAYLAND", "1");
-                }
-                std::env::set_var("MESA_GL_VERSION_OVERRIDE", "4.5");
-            }
-        
-            std::env::set_var("RUST_BACKTRACE", "1");
-            std::env::set_var("RUST_LOG", "full");
-        
+            let node_path = resource_dir.join("bin").join("node");
+
+            #[cfg(target_os = "windows")]
+            let node_path = resource_dir.join("node").join("node.exe");
+
+            #[cfg(target_os = "macos")]
             let node_path = resource_dir.join("node").join("bin").join("node");
-            let work_dir = resource_dir.join("app");
-        
+
+            println!("Node path: {:?}", node_path);
+            println!("Working dir: {:?}", resource_dir);
+
+            // Check if the Node.js binary exists
             if !node_path.exists() {
                 panic!("Node binary not found at: {:?}", node_path);
             }
-        
-            std::process::Command::new(&node_path)
+
+            // Start the Node.js server
+            Command::new(&node_path)
                 .arg("index.cjs")
-                .current_dir(&work_dir)
+                .current_dir(&resource_dir)
                 .env("NODE_ENV", "production")
+                .env("NPM_PREFIX", resource_dir.join("node_modules"))
                 .spawn()
                 .expect("Failed to start Node.js server");
-        
-            // Optional: wait for server to be ready here if needed
+
+            println!("Waiting for Node.js server on localhost:5000...");
+            if !wait_for_server("localhost", 5000, 30, 200) {
+                panic!("Node server failed to start in time.");
+            }
+
             Ok(())
         })
-    
         .run(tauri::generate_context!())
         .expect("Error while running Tauri application");
 }
