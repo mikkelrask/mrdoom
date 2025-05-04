@@ -40,7 +40,6 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: 8
-          run_install: false  # We'll handle the install manually
 
       # Setup Node.js for building the app
       - name: Setup Node.js
@@ -55,30 +54,10 @@ jobs:
 
       # Install dependencies
       - name: Install dependencies
-        shell: bash
-        run: |
-          # Check for pnpm workspace configuration issues
-          if [ -f "pnpm-workspace.yaml" ]; then
-            echo "Detected pnpm-workspace.yaml, ensuring it has proper configuration"
-            # Add packages array if missing
-            if ! grep -q "packages:" pnpm-workspace.yaml; then
-              echo -e "packages:\n  - '.'" >> pnpm-workspace.yaml
-              cat pnpm-workspace.yaml
-            fi
-          fi
-          
-          # Check for package.json workspace configuration
-          if [ -f "package.json" ] && grep -q "\"workspace\":" package.json; then
-            echo "Detected workspace configuration in package.json"
-            # Try to install without workspace features if there are issues
-            pnpm install || pnpm install --shamefully-hoist
-          else
-            # Standard installation
-            pnpm install
-          fi
+        run: pnpm install
 
       # Run the main build
-      - name: Build the project
+      - name: Build the static Vite files
         run: pnpm run build
 
       # Setup Node.js binary for bundling
@@ -106,33 +85,33 @@ jobs:
           # Create necessary directories first
           mkdir -p src-tauri/resources/app
           
-          # Install server dependencies directly in the destination folder
-          cp server/server-package.json src-tauri/resources/app/package.json
+          # Copy package.json to the destination folder
+          cp server/server-package.json dist/package.json
           
-          # Navigate to the directory and install dependencies
-          cd src-tauri/resources/app
-          pnpm install --prod --no-workspace
-          cd ../../..
+          # Navigate to the dist directory and run the server dependencies installation
+          cd dist
+          # Install server dependencies
+          pnpm install --prod
+          cd ..
           
           # Copy server components directly to the destination
           cp dist/index.cjs src-tauri/resources/app/ || true
           cp -r server/shared src-tauri/resources/app/shared || true
           cp -r dist/public src-tauri/resources/app/public || true
           
-      # Build Tauri app using the Tauri Action
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+      # Build the Tauri application using the Tauri GitHub Action
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
         with:
-          # Optional parameters for tauri-action, adjust as needed
-          tagName: app-v__VERSION__  # This uses the version in your package.json
+          tagName: app-v__VERSION__
           releaseName: 'App v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
           prerelease: false
 
-      # Upload artifacts (as a backup/alternative to the GitHub release created by tauri-action)
+      # Upload artifacts
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
