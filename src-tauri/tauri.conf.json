@@ -4,9 +4,7 @@
   "version": "0.1.0",
   "identifier": "xyz.raske.mrdoom",
   "build": {
-    "devUrl": "http://localhost:5000",
-    "beforeDevCommand": "pnpm run dev",
-    "beforeBuildCommand": "pnpm run build && cd dist && pnpm install"
+    "devUrl": "http://localhost:5000"
   },
 
   "app": {

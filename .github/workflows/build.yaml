@@ -35,12 +35,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
 
+      # Install pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       # Setup Node.js for building the app
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
 
       # Install Rust
       - name: Install Rust
@@ -48,11 +54,11 @@ jobs:
 
       # Install dependencies
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       # Run the main build
       - name: Build the project
-        run: npm run build
+        run: pnpm run build
 
       # Setup Node.js binary for bundling
       - name: Setup Node.js binary
@@ -81,22 +87,30 @@ jobs:
           
           # Install server dependencies directly in the destination folder
           cp server/server-package.json src-tauri/resources/app/package.json
-          npm install --prefix ./src-tauri/resources/app --omit=dev
+          pnpm --prefix ./src-tauri/resources/app install --prod
           
           # Copy server components directly to the destination
           cp dist/index.cjs src-tauri/resources/app/ || true
           cp -r server/shared src-tauri/resources/app/shared || true
           cp -r dist/public src-tauri/resources/app/public || true
           
-      # Build the actual app
+      # Build Tauri app using the Tauri Action
       - name: Build Tauri app
-        run: npx tauri build
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Optional parameters for tauri-action, adjust as needed
+          tagName: app-v__VERSION__  # This uses the version in your package.json
+          releaseName: 'App v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
+          releaseDraft: true
+          prerelease: false
 
-      # Upload artifacts only if the build directory exists
+      # Upload artifacts (as a backup/alternative to the GitHub release created by tauri-action)
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
           path: src-tauri/target/release/bundle/
-
