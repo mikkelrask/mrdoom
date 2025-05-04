@@ -48,18 +48,18 @@ fn main() {
             // Directly use the path to your resources (dist, _up_, etc.)
             let resource_dir = env::var("RESOURCES_DIR")
                 .map(|v| PathBuf::from(v))
-                .unwrap_or_else(|_| PathBuf::from("/usr/lib/mrdoom/_up_/dist"));
+                .unwrap_or_else(|_| PathBuf::from("resources/app"));
 
             // Define the correct node path based on your OS
             #[cfg(target_os = "linux")]
-            let node_path = resource_dir.join("bin").join("node");
-
+            let node_path = resource_dir.join("node");
+            
             #[cfg(target_os = "windows")]
-            let node_path = resource_dir.join("node").join("node.exe");
-
+            let node_path = resource_dir.join("node.exe");
+            
             #[cfg(target_os = "macos")]
-            let node_path = resource_dir.join("node").join("bin").join("node");
-
+            let node_path = resource_dir.join("node");
+            
             println!("Node path: {:?}", node_path);
             println!("Working dir: {:?}", resource_dir);
 
