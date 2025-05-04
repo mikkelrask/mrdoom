@@ -93,7 +93,6 @@ jobs:
           test -d dist/public || (echo "❌ public folder missing" && exit 1)
           test -d dist/node_modules || (echo "❌ node_modules missing" && exit 1)
 
-          tree dist
           # Copy required assets
           cp dist/index.cjs src-tauri/resources/app/
           cp -r shared src-tauri/resources/app/shared
