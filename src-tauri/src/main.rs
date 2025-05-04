@@ -48,7 +48,7 @@ fn main() {
     tauri::Builder::default()
         .setup(|app| {
             // Get the resource directory based on the platform
-            let resource_dir = app.path_resolver().resource_dir()
+            let resource_dir = app.handle().path_resolver().resource_dir()
                 .expect("Failed to get resource directory");
             
             // Determine Node path and working directory
