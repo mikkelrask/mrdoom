@@ -31,7 +31,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Install Linux dependencies
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
@@ -44,71 +43,69 @@ jobs:
           echo "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1" >> $GITHUB_ENV
           echo "PKG_CONFIG_ALLOW_SYSTEM_LIBS=1" >> $GITHUB_ENV
 
-      # Install pnpm
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
 
-      # Setup Node.js for building the app
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'pnpm'
 
-      # Install Rust
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      # Install dependencies
       - name: Install dependencies
         run: pnpm install
 
-      # Run the main build
-      - name: Build the static Vite files
+      - name: Build frontend
         run: pnpm run build
 
-      # Setup Node.js binary for bundling
       - name: Setup Node.js binary
         shell: bash
         run: |
           mkdir -p src-tauri/resources
-          
-          # Platform-specific download and extraction
+
           if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
             curl -LO "${{ matrix.node-download }}"
             powershell -Command "Expand-Archive -Path \"*.zip\" -DestinationPath \".\""
-            powershell -Command "Move-Item -Path \"node-v18.17.1-win-x64\" -Destination \"src-tauri/resources/node\""
+            powershell -Command "Move-Item -Path \"node-v18.17.1-win-x64\\bin\\node.exe\" -Destination \"src-tauri/resources/node\\node.exe\""
           else
             curl -L "${{ matrix.node-download }}" -o node.tar.gz
             tar -xzf node.tar.gz
-            mv node-v18.17.1-* src-tauri/resources/node
+            mv node-v18.17.1-*/bin/node src-tauri/resources/node
             chmod -R +x src-tauri/resources/node/bin/
           fi
 
-      # Create server folder structure and install dependencies in one step
       - name: Prepare server components
         shell: bash
         run: |
-          # Create necessary directories first
           mkdir -p src-tauri/resources/app
-          
-          # Copy package.json to the destination folder
+
+          # Copy and install server files
           cp server/server-package.json dist/package.json
-          
-          # Navigate to the dist directory and run the server dependencies installation
           cd dist
-          # Install server dependencies
           pnpm install --prod
           cd ..
-          
-          # Copy server components directly to the destination
-          cp dist/index.cjs src-tauri/resources/app/ || true
-          cp -r server/shared src-tauri/resources/app/shared || true
-          cp -r dist/public src-tauri/resources/app/public || true
-          
-      # Build the Tauri application using the Tauri GitHub Action
+
+          # Validate outputs
+          test -f dist/index.cjs || (echo "❌ index.cjs missing" && exit 1)
+          test -d dist/public || (echo "❌ public folder missing" && exit 1)
+          test -d dist/node_modules || (echo "❌ node_modules missing" && exit 1)
+
+          # Copy required assets
+          cp dist/index.cjs src-tauri/resources/app/
+          cp -r server/shared src-tauri/resources/app/shared
+          cp -r dist/public src-tauri/resources/app/public
+          cp -r dist/node_modules src-tauri/resources/app/node_modules
+
+      - name: Check final app bundle structure
+        run: |
+          echo "Contents of app resources:"
+          ls -R src-tauri/resources/app
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -120,7 +117,6 @@ jobs:
           releaseDraft: true
           prerelease: false
 
-      # Upload artifacts
       - name: Upload artifacts
         if: success()
         uses: actions/upload-artifact@v4
