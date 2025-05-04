@@ -45,43 +45,42 @@ fn main() {
     env::set_var("RUST_LOG", "full");
 
     Builder::default()
-        .setup(|app: &mut App| {
-            let resource_dir = app
+        .setup(|app_handle| {
+            let resource_dir = app_handle
                 .path_resolver()
-                .resolve_resource("app") // this must match tauri.conf.json -> tauri.bundle.resources
-                .unwrap_or_else(|| PathBuf::from("/usr/lib/mrdoom/_up_/dist"));
-
+                .resolve_resource("resources")
+                .expect("Could not resolve resource dir");
+        
             #[cfg(target_os = "linux")]
-            let node_path = resource_dir.join("bin").join("node");
-
-            #[cfg(target_os = "windows")]
-            let node_path = resource_dir.join("node").join("node.exe");
-
-            #[cfg(target_os = "macos")]
+            {
+                std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+                if std::env::var("WAYLAND_DISPLAY").is_ok() {
+                    std::env::set_var("MOZ_ENABLE_WAYLAND", "1");
+                }
+                std::env::set_var("MESA_GL_VERSION_OVERRIDE", "4.5");
+            }
+        
+            std::env::set_var("RUST_BACKTRACE", "1");
+            std::env::set_var("RUST_LOG", "full");
+        
             let node_path = resource_dir.join("node").join("bin").join("node");
-
-            println!("Node path: {:?}", node_path);
-            println!("Working dir: {:?}", resource_dir);
-
+            let work_dir = resource_dir.join("app");
+        
             if !node_path.exists() {
                 panic!("Node binary not found at: {:?}", node_path);
             }
-
-            Command::new(&node_path)
+        
+            std::process::Command::new(&node_path)
                 .arg("index.cjs")
-                .current_dir(&resource_dir)
+                .current_dir(&work_dir)
                 .env("NODE_ENV", "production")
-                .env("NPM_PREFIX", resource_dir.join("node_modules"))
                 .spawn()
                 .expect("Failed to start Node.js server");
-
-            println!("Waiting for Node.js server on localhost:5000...");
-            if !wait_for_server("localhost", 5000, 30, 200) {
-                panic!("Node server failed to start in time.");
-            }
-
+        
+            // Optional: wait for server to be ready here if needed
             Ok(())
         })
+    
         .run(tauri::generate_context!())
         .expect("Error while running Tauri application");
 }
