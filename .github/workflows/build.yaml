@@ -40,6 +40,7 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: 8
+          run_install: false  # We'll handle the install manually
 
       # Setup Node.js for building the app
       - name: Setup Node.js
@@ -54,7 +55,27 @@ jobs:
 
       # Install dependencies
       - name: Install dependencies
-        run: pnpm install
+        shell: bash
+        run: |
+          # Check for pnpm workspace configuration issues
+          if [ -f "pnpm-workspace.yaml" ]; then
+            echo "Detected pnpm-workspace.yaml, ensuring it has proper configuration"
+            # Add packages array if missing
+            if ! grep -q "packages:" pnpm-workspace.yaml; then
+              echo -e "packages:\n  - '.'" >> pnpm-workspace.yaml
+              cat pnpm-workspace.yaml
+            fi
+          fi
+          
+          # Check for package.json workspace configuration
+          if [ -f "package.json" ] && grep -q "\"workspace\":" package.json; then
+            echo "Detected workspace configuration in package.json"
+            # Try to install without workspace features if there are issues
+            pnpm install || pnpm install --shamefully-hoist
+          else
+            # Standard installation
+            pnpm install
+          fi
 
       # Run the main build
       - name: Build the project
@@ -87,7 +108,11 @@ jobs:
           
           # Install server dependencies directly in the destination folder
           cp server/server-package.json src-tauri/resources/app/package.json
-          pnpm --prefix ./src-tauri/resources/app install --prod
+          
+          # Navigate to the directory and install dependencies
+          cd src-tauri/resources/app
+          pnpm install --prod --no-workspace
+          cd ../../..
           
           # Copy server components directly to the destination
           cp dist/index.cjs src-tauri/resources/app/ || true
