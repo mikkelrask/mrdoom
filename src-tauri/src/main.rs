@@ -9,7 +9,7 @@ use std::{
     io::ErrorKind,
 };
 
-use tauri::{App, Builder};
+use tauri::Builder;
 use tauri::path::BaseDirectory; // Correct import for BaseDirectory
 
 fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: u64) -> bool {
@@ -48,7 +48,7 @@ fn main() {
         .setup(|app| {
             // Resolve the `resources` directory using BaseDirectory::Resource
             let resource_dir = app
-                .path_resolver()
+                .path()
                 .resolve(".", BaseDirectory::Resource)
                 .expect("Failed to resolve the resources directory");
 
