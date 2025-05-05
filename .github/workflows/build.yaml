@@ -58,10 +58,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm install
 
       - name: Build frontend
-        run: pnpm run build
+        run: npm run build
 
       - name: Setup Node.js binary
         shell: bash
