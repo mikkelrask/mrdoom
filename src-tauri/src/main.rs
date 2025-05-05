@@ -44,7 +44,7 @@ fn main() {
     env::set_var("RUST_LOG", "full");
 
     Builder::default()
-        .setup(|_app| {
+        .setup(|app| {
             // Resolve the `resources` directory using BaseDirectory::Resource
             let resource_dir = app.path().resolve(BaseDirectory::Resource)?;
 
