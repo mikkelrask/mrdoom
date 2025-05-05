@@ -93,10 +93,16 @@ jobs:
           test -d dist/public || (echo "❌ public folder missing" && exit 1)
           test -d dist/node_modules || (echo "❌ node_modules missing" && exit 1)
 
-          # Copy required assets
+      - name: Copy server node_modules (Mac/Linux)
+        if: matrix.platform != 'windows-latest'
+        shell: bash
+        run: |
           cp dist/index.cjs src-tauri/resources/app/
           cp -r shared src-tauri/resources/app/shared
           cp -r dist/public src-tauri/resources/app/public
+          rm -rf src-tauri/resources/app/node_modules
+          cp -r dist/node_modules src-tauri/resources/app/node_modules
+
 
       - name: Copy server node_modules (Windows)
         if: matrix.platform == 'windows-latest'
@@ -104,14 +110,9 @@ jobs:
         run: |
           # Remove-Item -Recurse -Force src-tauri/resources/app/node_modules -ErrorAction SilentlyContinue
           Copy-Item -Recurse -Force dist/node_modules src-tauri/resources/app/node_modules
-
-      - name: Copy server node_modules (non-Windows)
-        if: matrix.platform != 'windows-latest'
-        shell: bash
-        run: |
-          rm -rf src-tauri/resources/app/node_modules
-          cp -r dist/node_modules src-tauri/resources/app/node_modules
-
+          Copy-Item -Recurse -Force dist/index.cjs src-tauri/resources/app/
+          Copy-Item -Recurse -Force shared src-tauri/resources/app/shared
+          Copy-Item -Recurse -Force dist/public src-tauri/resources/app/public
 
       - name: Check final app bundle structure
         run: |
