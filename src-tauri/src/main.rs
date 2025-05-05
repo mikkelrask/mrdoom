@@ -10,6 +10,7 @@ use std::{
 };
 
 use tauri::{App, Builder};
+use tauri::api::path::resource_dir;
 
 fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: u64) -> bool {
     let start = Instant::now();
@@ -45,31 +46,25 @@ fn main() {
 
     Builder::default()
         .setup(|_app: &mut App| {
-            // Get the directory of the current executable
-            let exe_dir = env::current_exe()
-                .expect("Failed to get the path of the current executable")
-                .parent()
-                .expect("Executable has no parent directory")
-                .to_path_buf();
+            // Use Tauri's API to get the resource directory
+            let resource_dir = resource_dir()
+                .expect("Failed to get the resource directory. Ensure the app is properly bundled.");
 
-            // Assume resources are located in a "resources" subdirectory relative to the executable
-            let resource_dir = exe_dir.join("resources");
+            // Log the resolved resource directory
+            println!("Resolved Resource dir: {:?}", resource_dir);
 
-            // Ensure resource_dir is an absolute path
-            let resource_dir = resource_dir.canonicalize().expect("Failed to resolve resource directory");
-
-            // Define the correct node path based on your OS
+            // Define the correct Node.js binary path based on the OS
             #[cfg(target_os = "linux")]
             let node_path = resource_dir.join("node");
-            
+
             #[cfg(target_os = "windows")]
             let node_path = resource_dir.join("node.exe");
-            
+
             #[cfg(target_os = "macos")]
             let node_path = resource_dir.join("node");
 
+            // Log the resolved Node.js binary path
             println!("Resolved Node path: {:?}", node_path);
-            println!("Resolved Working dir: {:?}", resource_dir);
 
             // Check if the Node.js binary exists
             if !node_path.exists() {
