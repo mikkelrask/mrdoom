@@ -10,7 +10,7 @@ use std::{
 };
 
 use tauri::{App, Builder};
-use tauri::api::path::BaseDirectory;
+use tauri::path::BaseDirectory; // Correct import for BaseDirectory
 
 fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: u64) -> bool {
     let start = Instant::now();
