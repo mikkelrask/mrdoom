@@ -1,6 +1,6 @@
 [package]
 name = "mrdoom"
-version = "0.1.0"
+version = "0.1.1"
 description = "Rip and Tear - the easy way!"
 authors = ["mikkelrask"]
 license = "beer-ware rev42"
