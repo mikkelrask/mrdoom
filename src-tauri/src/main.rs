@@ -48,7 +48,7 @@ fn main() {
             // Directly use the path to your resources (dist, _up_, etc.)
             let resource_dir = env::var("RESOURCES_DIR")
                 .map(|v| PathBuf::from(v))
-                .unwrap_or_else(|_| PathBuf::from("resources/app"));
+                .unwrap_or_else(|_| PathBuf::from("resources"));
 
             // Define the correct node path based on your OS
             #[cfg(target_os = "linux")]
