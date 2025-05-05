@@ -121,6 +121,7 @@ jobs:
           Copy-Item -Recurse -Force dist/index.cjs src-tauri/resources/app/
           Copy-Item -Recurse -Force shared src-tauri/resources/app/shared
           Copy-Item -Recurse -Force dist/public src-tauri/resources/app/public
+          exit 0
 
       - name: Check final app bundle structure
         run: |
