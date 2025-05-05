@@ -79,53 +79,28 @@ jobs:
             chmod +x src-tauri/resources/node
           fi
 
-      - name: Prepare server components
+      - name: Prepare server components in final location
         shell: bash
         run: |
           mkdir -p src-tauri/resources/app
 
-          # Copy and install server files
-          cp server/server-package.json dist/package.json
-          npm install --omit=dev --prefix=dist
+          cp server/server-package.json src-tauri/resources/app/package.json
+          npm install --omit=dev --prefix src-tauri/resources/app
 
-          # Validate outputs
+          # Validate output
           test -f dist/index.cjs || (echo "❌ index.cjs missing" && exit 1)
           test -d dist/public || (echo "❌ public folder missing" && exit 1)
-          test -d dist/node_modules || (echo "❌ node_modules missing" && exit 1)
+          test -d src-tauri/resources/app/node_modules || (echo "❌ node_modules missing" && exit 1)
 
-      - name: Copy server node_modules (Mac/Linux)
-        if: matrix.platform != 'windows-latest'
-        shell: bash
-        run: |
           cp dist/index.cjs src-tauri/resources/app/
           cp -r shared src-tauri/resources/app/shared
           cp -r dist/public src-tauri/resources/app/public
-          rm -rf src-tauri/resources/app/node_modules
-          cp -r dist/node_modules src-tauri/resources/app/node_modules
 
-
-      - name: Copy server node_modules (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          $rc = robocopy dist\node_modules src-tauri\resources\app\node_modules /E /NFL /NDL /NJH /NJS /NC /XJ
-          $exitCode = $LASTEXITCODE
-
-          if ($exitCode -le 3) {
-              Write-Host "Robocopy completed with benign exit code $exitCode."
-          } else {
-              Write-Error "Robocopy failed with critical exit code $exitCode."
-              exit $exitCode
-          }
-
-          Copy-Item -Recurse -Force dist/index.cjs src-tauri/resources/app/
-          Copy-Item -Recurse -Force shared src-tauri/resources/app/shared
-          Copy-Item -Recurse -Force dist/public src-tauri/resources/app/public
-          exit 0
 
       - name: Check final app bundle structure
         run: |
           echo "Contents of app resources:"
+          ls -lah src-tauri/resources
 
       - uses: tauri-apps/tauri-action@v0
         env:
