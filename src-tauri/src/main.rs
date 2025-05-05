@@ -45,10 +45,12 @@ fn main() {
 
     Builder::default()
         .setup(|_app: &mut App| {
-            // Directly use the path to your resources (dist, _up_, etc.)
             let resource_dir = env::var("RESOURCES_DIR")
                 .map(|v| PathBuf::from(v))
                 .unwrap_or_else(|_| PathBuf::from("resources"));
+
+            // Ensure resource_dir is an absolute path
+            let resource_dir = resource_dir.canonicalize().expect("Failed to resolve resource directory");
 
             // Define the correct node path based on your OS
             #[cfg(target_os = "linux")]
@@ -59,19 +61,19 @@ fn main() {
             
             #[cfg(target_os = "macos")]
             let node_path = resource_dir.join("node");
-            
-            println!("Node path: {:?}", node_path);
-            println!("Working dir: {:?}", resource_dir);
+
+            println!("Resolved Node path: {:?}", node_path);
+            println!("Resolved Working dir: {:?}", resource_dir);
 
             // Check if the Node.js binary exists
             if !node_path.exists() {
                 panic!("Node binary not found at: {:?}", node_path);
             }
 
-            // Start the Node.js server
+            // Start the Node.js server using absolute paths
             Command::new(&node_path)
-                .arg("index.cjs")
-                .current_dir(&resource_dir)
+                .arg(resource_dir.join("index.cjs")) // Use absolute path for index.cjs
+                .current_dir(&resource_dir) // Set working directory
                 .env("NODE_ENV", "production")
                 .env("NPM_PREFIX", resource_dir.join("node_modules"))
                 .spawn()
