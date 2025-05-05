@@ -108,7 +108,16 @@ jobs:
         if: matrix.platform == 'windows-latest'
         shell: pwsh
         run: |
-          robocopy dist\node_modules src-tauri\resources\app\node_modules /E /NFL /NDL /NJH /NJS /NC /XJ
+          $rc = robocopy dist\node_modules src-tauri\resources\app\node_modules /E /NFL /NDL /NJH /NJS /NC /XJ
+          $exitCode = $LASTEXITCODE
+
+          if ($exitCode -le 3) {
+              Write-Host "Robocopy completed with benign exit code $exitCode."
+          } else {
+              Write-Error "Robocopy failed with critical exit code $exitCode."
+              exit $exitCode
+          }
+
           Copy-Item -Recurse -Force dist/index.cjs src-tauri/resources/app/
           Copy-Item -Recurse -Force shared src-tauri/resources/app/shared
           Copy-Item -Recurse -Force dist/public src-tauri/resources/app/public
