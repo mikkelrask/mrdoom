@@ -100,7 +100,7 @@ jobs:
       - name: Check final app bundle structure
         run: |
           echo "Contents of app resources:"
-          ls -lah src-tauri/resources
+          ls src-tauri/resources
 
       - uses: tauri-apps/tauri-action@v0
         env:
