@@ -114,7 +114,7 @@ jobs:
           } else {
             Write-Host "node_modules does not exist."
           }
-          Copy-Item -Recurse -Force dist/node_modules src-tauri/resources/app/node_modules
+          robocopy dist\node_modules src-tauri\resources\app\node_modules /E /NFL /NDL /NJH /NJS /NC
           Copy-Item -Recurse -Force dist/index.cjs src-tauri/resources/app/
           Copy-Item -Recurse -Force shared src-tauri/resources/app/shared
           Copy-Item -Recurse -Force dist/public src-tauri/resources/app/public
