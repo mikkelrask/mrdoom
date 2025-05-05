@@ -10,7 +10,7 @@ use std::{
 };
 
 use tauri::{App, Builder};
-use tauri::api::path::resource_dir;
+use tauri::api::path::BaseDirectory;
 
 fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: u64) -> bool {
     let start = Instant::now();
@@ -45,12 +45,13 @@ fn main() {
     env::set_var("RUST_LOG", "full");
 
     Builder::default()
-        .setup(|_app: &mut App| {
-            // Use Tauri's API to get the resource directory
-            let resource_dir = resource_dir()
-                .expect("Failed to get the resource directory. Ensure the app is properly bundled.");
+        .setup(|app| {
+            // Resolve the `resources` directory using BaseDirectory::Resource
+            let resource_dir = app
+                .path_resolver()
+                .resolve(".", BaseDirectory::Resource)
+                .expect("Failed to resolve the resources directory");
 
-            // Log the resolved resource directory
             println!("Resolved Resource dir: {:?}", resource_dir);
 
             // Define the correct Node.js binary path based on the OS
@@ -63,7 +64,6 @@ fn main() {
             #[cfg(target_os = "macos")]
             let node_path = resource_dir.join("node");
 
-            // Log the resolved Node.js binary path
             println!("Resolved Node path: {:?}", node_path);
 
             // Check if the Node.js binary exists
@@ -73,8 +73,8 @@ fn main() {
 
             // Start the Node.js server using absolute paths
             Command::new(&node_path)
-                .arg(resource_dir.join("app/index.cjs")) // Use absolute path for index.cjs
-                .current_dir(&resource_dir) // Set working directory to the resource directory
+                .arg("app/index.cjs") // Call app/index.cjs relative to the resources directory
+                .current_dir(&resource_dir) // Set working directory to the resources directory
                 .env("NODE_ENV", "production")
                 .env("NPM_PREFIX", resource_dir.join("app/node_modules")) // Correct NPM_PREFIX path
                 .spawn()
