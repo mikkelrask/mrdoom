@@ -109,7 +109,7 @@ export async function launchMod(modId: number) {
   console.log("Starting static server...");
   serveStatic(expressApp);
 
-  const port = 5000;
+  const port = 7666;
   server.listen(
     {
       port,

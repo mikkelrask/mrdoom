@@ -45,9 +45,15 @@ fn main() {
 
     Builder::default()
         .setup(|_app: &mut App| {
-            let resource_dir = env::var("RESOURCES_DIR")
-                .map(|v| PathBuf::from(v))
-                .unwrap_or_else(|_| PathBuf::from("resources"));
+            // Get the directory of the current executable
+            let exe_dir = env::current_exe()
+                .expect("Failed to get the path of the current executable")
+                .parent()
+                .expect("Executable has no parent directory")
+                .to_path_buf();
+
+            // Assume resources are located in a "resources" subdirectory relative to the executable
+            let resource_dir = exe_dir.join("resources");
 
             // Ensure resource_dir is an absolute path
             let resource_dir = resource_dir.canonicalize().expect("Failed to resolve resource directory");
@@ -79,8 +85,8 @@ fn main() {
                 .spawn()
                 .expect("Failed to start Node.js server");
 
-            println!("Waiting for Node.js server on localhost:5000...");
-            if !wait_for_server("localhost", 5000, 30, 200) {
+            println!("Waiting for Node.js server on localhost:7666...");
+            if !wait_for_server("localhost", 7666, 30, 200) {
                 panic!("Node server failed to start in time.");
             }
 

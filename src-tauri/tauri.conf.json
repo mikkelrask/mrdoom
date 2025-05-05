@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "xyz.raske.mrdoom",
   "build": {
-    "devUrl": "http://localhost:5000"
+    "devUrl": "http://localhost:7666"
   },
 
   "app": {
@@ -16,7 +16,7 @@
         "resizable": true,
         "fullscreen": false,
         "decorations": true,
-        "url": "http://localhost:5000/"
+        "url": "http://localhost:7666"
       }
     ],
     "security": {
