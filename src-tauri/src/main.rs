@@ -8,8 +8,8 @@ use std::{
     io::ErrorKind,
 };
 
-use tauri::{App,Builder, Manager};
-use tauri::path::BaseDirectory; // Correct import for BaseDirectory
+use tauri::{Builder, Manager};
+use tauri::path::BaseDirectory;
 
 fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: u64) -> bool {
     let start = Instant::now();
@@ -46,7 +46,7 @@ fn main() {
     Builder::default()
         .setup(|app| {
             // Resolve the `resources` directory using BaseDirectory::Resource
-            let resource_dir = app.path().resolve(BaseDirectory::Resource)?;
+            let resource_dir = app.path().resolve("", BaseDirectory::Resource)?;
 
             println!("Resolved Resource dir: {:?}", resource_dir);
 
