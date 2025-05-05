@@ -73,10 +73,10 @@ fn main() {
 
             // Start the Node.js server using absolute paths
             Command::new(&node_path)
-                .arg(resource_dir.join("index.cjs")) // Use absolute path for index.cjs
-                .current_dir(&resource_dir) // Set working directory
+                .arg(resource_dir.join("app/index.cjs")) // Use absolute path for index.cjs
+                .current_dir(&resource_dir) // Set working directory to the resource directory
                 .env("NODE_ENV", "production")
-                .env("NPM_PREFIX", resource_dir.join("node_modules"))
+                .env("NPM_PREFIX", resource_dir.join("app/node_modules")) // Correct NPM_PREFIX path
                 .spawn()
                 .expect("Failed to start Node.js server");
 
