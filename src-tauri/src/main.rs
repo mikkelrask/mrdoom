@@ -1,7 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::{
     env,
-    path::PathBuf,
     process::Command,
     thread,
     time::{Duration, Instant},
@@ -9,7 +8,7 @@ use std::{
     io::ErrorKind,
 };
 
-use tauri::Builder;
+use tauri::{App,Builder, Manager};
 use tauri::path::BaseDirectory; // Correct import for BaseDirectory
 
 fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: u64) -> bool {
@@ -45,12 +44,9 @@ fn main() {
     env::set_var("RUST_LOG", "full");
 
     Builder::default()
-        .setup(|app| {
+        .setup(|_app| {
             // Resolve the `resources` directory using BaseDirectory::Resource
-            let resource_dir = app
-                .path()
-                .resolve(".", BaseDirectory::Resource)
-                .expect("Failed to resolve the resources directory");
+            let resource_dir = app.path().resolve(BaseDirectory::Resource)?;
 
             println!("Resolved Resource dir: {:?}", resource_dir);
 
