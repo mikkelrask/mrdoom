@@ -108,7 +108,12 @@ jobs:
         if: matrix.platform == 'windows-latest'
         shell: pwsh
         run: |
-          # Remove-Item -Recurse -Force src-tauri/resources/app/node_modules -ErrorAction SilentlyContinue
+          if (Test-Path "src-tauri/resources/app/node_modules") {
+            Write-Host "node_modules exists, listing contents:"
+            Get-ChildItem -Path "src-tauri/resources/app/node_modules" -Recurse -ErrorAction SilentlyContinue
+          } else {
+            Write-Host "node_modules does not exist."
+          }
           Copy-Item -Recurse -Force dist/node_modules src-tauri/resources/app/node_modules
           Copy-Item -Recurse -Force dist/index.cjs src-tauri/resources/app/
           Copy-Item -Recurse -Force shared src-tauri/resources/app/shared
