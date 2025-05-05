@@ -70,12 +70,12 @@ jobs:
 
           if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
             curl -LO "${{ matrix.node-download }}"
-            powershell -Command "Expand-Archive -Path \"*.zip\" -DestinationPath \".\""
-            powershell -Command \"Move-Item -Path 'node-v18.17.1-win-x64\\node.exe' -Destination 'src-tauri\\resources\\node.exe'\"
+            powershell -Command "Expand-Archive -Path '*.zip' -DestinationPath '.'"
+            powershell -Command "Move-Item -Path 'node-v*-win-x64\\node.exe' -Destination 'src-tauri\\resources\\node.exe'"
           else
             curl -L "${{ matrix.node-download }}" -o node.tar.gz
             tar -xzf node.tar.gz
-            mv node-v18.17.1-*/bin/node src-tauri/resources/node
+            mv node-v*/bin/node src-tauri/resources/node
             chmod +x src-tauri/resources/node
           fi
 

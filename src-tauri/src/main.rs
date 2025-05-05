@@ -46,7 +46,7 @@ fn main() {
     Builder::default()
         .setup(|app| {
             // Resolve the `resources` directory using BaseDirectory::Resource
-            let resource_dir = app.path().resolve("", BaseDirectory::Resource)?;
+            let resource_dir = app.path().resolve("resources", BaseDirectory::Resource)?;
 
             println!("Resolved Resource dir: {:?}", resource_dir);
 
