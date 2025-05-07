@@ -1,14 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::{
     env,
-    process::Command,
+    process::{Child, Command},
     thread,
     time::{Duration, Instant},
     net::TcpStream,
     io::ErrorKind,
 };
-
-use tauri::{Builder, Manager};
+use std::sync::{Arc, Mutex};
+use tauri::{ Builder, Manager };
 use tauri::path::BaseDirectory;
 
 fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: u64) -> bool {
@@ -43,46 +43,64 @@ fn main() {
     env::set_var("RUST_BACKTRACE", "1");
     env::set_var("RUST_LOG", "full");
 
-    Builder::default()
-        .setup(|app| {
-            // Resolve the `resources` directory using BaseDirectory::Resource
-            let resource_dir = app.path().resolve("resources", BaseDirectory::Resource)?;
+    let node_process: Arc<Mutex<Option<Child>>> = Arc::new(Mutex::new(None));
 
-            println!("Resolved Resource dir: {:?}", resource_dir);
+    let app = Builder::default()
+        .setup({
+            let node_process = Arc::clone(&node_process);
+            move |app| {
+                // Resolve the `resources` directory using BaseDirectory::Resource
+                let resource_dir = app.path().resolve("resources", BaseDirectory::Resource)?;
 
-            // Define the correct Node.js binary path based on the OS
-            #[cfg(target_os = "linux")]
-            let node_path = resource_dir.join("node");
+                println!("Resolved Resource dir: {:?}", resource_dir);
 
-            #[cfg(target_os = "windows")]
-            let node_path = resource_dir.join("node.exe");
+                // Define the correct Node.js binary path based on the OS
+                #[cfg(target_os = "linux")]
+                let node_path = resource_dir.join("node");
 
-            #[cfg(target_os = "macos")]
-            let node_path = resource_dir.join("node");
+                #[cfg(target_os = "windows")]
+                let node_path = resource_dir.join("node.exe");
 
-            println!("Resolved Node path: {:?}", node_path);
+                #[cfg(target_os = "macos")]
+                let node_path = resource_dir.join("node");
 
-            // Check if the Node.js binary exists
-            if !node_path.exists() {
-                panic!("Node binary not found at: {:?}", node_path);
+                println!("Resolved Node path: {:?}", node_path);
+
+                // Check if the Node.js binary exists
+                if !node_path.exists() {
+                    panic!("Node binary not found at: {:?}", node_path);
+                }
+
+                // Start the Node.js server using absolute paths
+                let child = Command::new(&node_path)
+                    .arg(resource_dir.join("app/index.cjs")) // Use absolute path for index.cjs
+                    .current_dir(&resource_dir) // Set working directory to the resources directory
+                    .env("NODE_ENV", "production")
+                    .env("NPM_PREFIX", resource_dir.join("app/node_modules")) // Correct NPM_PREFIX path
+                    .spawn()
+                    .expect("Failed to start Node.js server");
+
+                println!("Waiting for Node.js server on localhost:7666...");
+                if !wait_for_server("localhost", 7666, 30, 200) {
+                    panic!("Node server failed to start in time.");
+                }
+
+                // Store the child process handle
+                *node_process.lock().unwrap() = Some(child);
+
+                Ok(())
             }
-
-            // Start the Node.js server using absolute paths
-            Command::new(&node_path)
-                .arg("app/index.cjs") // Call app/index.cjs relative to the resources directory
-                .current_dir(&resource_dir) // Set working directory to the resources directory
-                .env("NODE_ENV", "production")
-                .env("NPM_PREFIX", resource_dir.join("app/node_modules")) // Correct NPM_PREFIX path
-                .spawn()
-                .expect("Failed to start Node.js server");
-
-            println!("Waiting for Node.js server on localhost:7666...");
-            if !wait_for_server("localhost", 7666, 30, 200) {
-                panic!("Node server failed to start in time.");
-            }
-
-            Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("Error while running Tauri application");
+        .build(tauri::generate_context!())
+        .expect("Failed to build tauri application");
+        
+    app.run(move |_app_handle, event| {
+        if let tauri::RunEvent::ExitRequested { .. } = event {
+            // Kill the Node.js process when the app exits
+            if let Some(mut child) = node_process.lock().unwrap().take() {
+                println!("Shutting down Node.js server...");
+                let _ = child.kill(); // Attempt to kill the process
+            }
+        }
+    });
 }
