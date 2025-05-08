@@ -12,6 +12,7 @@ import { FolderOpenIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { gameService } from '@/lib/gameService';
 import type { IModFile } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
+import { open } from '@tauri-apps/plugin-dialog';
 
 interface ModFileSelectorProps {
   value: Omit<IModFile, 'id' | 'modId'>[];
@@ -109,34 +110,35 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
   
   const handleBrowseFile = async (index: number) => {
     try {
-        const result = await gameService.showOpenDialog({
-            properties: ['openFile'],
-            filters: [
-                { name: 'DOOM Files', extensions: ['wad', 'pk3', 'ipk3', 'deh', 'bex', 'zip'] }
-            ]
-        });
+      // Use the `open` function from @tauri-apps/plugin-dialog
+      const filePath = await open({
+        multiple: false, // Allow only a single file to be selected
+        filters: [
+          { name: 'DOOM Files', extensions: ['wad', 'pk3', 'ipk3', 'deh', 'bex', 'zip'] }
+        ]
+      });
 
-        if (!result.canceled && result.filePaths.length > 0) {
-            const filePath = result.filePaths[0];
-            const fileName = filePath.split(/[\\/]/).pop() || filePath;
+      // Check if a file was selected
+      if (filePath) {
+        const fileName = filePath.split(/[\\/]/).pop() || filePath;
 
-            // Update the file path
-            handleUpdateFile(index, 'filePath', filePath);
+        // Update the file path
+        handleUpdateFile(index, 'filePath', filePath);
 
-            // If the name is empty, update it with the file name
-            if (!value[index].name) {
-                handleUpdateFile(index, 'name', fileName);
-            }
+        // If the name is empty, update it with the file name
+        if (!value[index].name) {
+          handleUpdateFile(index, 'name', fileName);
         }
+      }
     } catch (error) {
-        console.error('Failed to open file dialog:', error);
-        toast({
-            title: 'Error',
-            description: 'Failed to open file dialog',
-            variant: 'destructive',
-        });
+      console.error('Failed to open file dialog:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to open file dialog',
+        variant: 'destructive',
+      });
     }
-};
+  };
   
   return (
     <div className="space-y-3">

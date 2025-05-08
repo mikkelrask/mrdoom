@@ -11,6 +11,9 @@ use std::sync::{Arc, Mutex};
 use tauri::{ Builder, Manager };
 use tauri::path::BaseDirectory;
 
+// Import the dialog plugin
+use tauri_plugin_dialog;
+
 fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: u64) -> bool {
     let start = Instant::now();
     let timeout = Duration::from_secs(timeout_secs);
@@ -45,10 +48,14 @@ fn main() {
 
     let node_process: Arc<Mutex<Option<Child>>> = Arc::new(Mutex::new(None));
 
+    // CRITICAL CHANGE: Register the dialog plugin at the application's entry point
     let app = Builder::default()
+        .plugin(tauri_plugin_dialog::init())  // Register dialog plugin here
         .setup({
             let node_process = Arc::clone(&node_process);
             move |app| {
+                println!("Tauri setup is running from main.rs...");
+                
                 // Resolve the `resources` directory using BaseDirectory::Resource
                 let resource_dir = app.path().resolve("resources", BaseDirectory::Resource)?;
 
@@ -73,10 +80,10 @@ fn main() {
 
                 // Start the Node.js server using absolute paths
                 let child = Command::new(&node_path)
-                    .arg(resource_dir.join("app/index.cjs")) // Use absolute path for index.cjs
-                    .current_dir(&resource_dir) // Set working directory to the resources directory
+                    .arg(resource_dir.join("app/index.cjs"))
+                    .current_dir(&resource_dir) 
                     .env("NODE_ENV", "production")
-                    .env("NPM_PREFIX", resource_dir.join("app/node_modules")) // Correct NPM_PREFIX path
+                    .env("NPM_PREFIX", resource_dir.join("app/node_modules")) 
                     .spawn()
                     .expect("Failed to start Node.js server");
 
@@ -87,6 +94,9 @@ fn main() {
 
                 // Store the child process handle
                 *node_process.lock().unwrap() = Some(child);
+
+                // Debug logging for plugins - using v2 compatible logging
+                println!("Dialog plugin registered successfully!");
 
                 Ok(())
             }
