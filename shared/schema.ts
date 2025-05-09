@@ -59,6 +59,7 @@ export interface IAppSettings {
   gzDoomPath: string;
   theme: string;
   savegamesPath?: string; 
+  modsDirectory?: string;
   screenshotsPath?: string;
   defaultSourcePort?: string;
 }

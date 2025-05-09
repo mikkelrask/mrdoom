@@ -16,6 +16,7 @@ const DEFAULT_SETTINGS: IAppSettings = {
   gzDoomPath: 'gzdoom', // Default to assuming gzdoom is in PATH
   theme: 'dark',
   savegamesPath: '~/.config/gzdoom/saves', // Add empty string defaults for optional properties
+  modsDirectory: '~/.config/mrdoom/mods',
   screenshotsPath: '~/Pictures/MRDoom/screenshots',
   defaultSourcePort: 'GZDoom'
 };
@@ -145,6 +146,23 @@ export async function getModFileCatalog(): Promise<any[]> {
   } catch (error) {
     console.error('storage.ts: Error reading modFileCatalogue.json:', error);
     return [];
+  }
+}
+
+// Move a file to a new path
+export async function moveFile(filePath: string, newPath: string): Promise<void> {
+  const fileName = filePath.split(/[\\/]/).pop() || filePath;
+  const pathWithoutFileName = filePath.replace(fileName, '');
+  const finalPath = newPath+'/files/'+fileName;
+  try {
+    console.log('[DEBUG] Moving file from', filePath, 'to', finalPath);
+    // if filePath is a zip file, extract it to the new path
+        
+    await fs.copyFileSync(filePath, finalPath);
+    console.log('[DEBUG] File moved successfully');
+  } catch (error: any) {
+    console.error('Error moving file:', error);
+    throw new Error(`Failed to move file: ${error.message}`);
   }
 }
 

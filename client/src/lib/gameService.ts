@@ -112,6 +112,20 @@ export const gameService = {
     return handleApiResponse<{ success: boolean, message: string }>(response);
   },
   
+  // Move file 
+  async moveFile(filePath: string, newPath: string): Promise<void> {
+    const response = await fetch('/api/move-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filePath, newPath })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to move file: ${errorData.error || response.statusText}`);
+    }
+  },  
+
   // Settings operations
   async getSettings(): Promise<IAppSettings> {
     console.log('Getting settings from API');

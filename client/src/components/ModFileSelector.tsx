@@ -14,10 +14,13 @@ import type { IModFile } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { open } from '@tauri-apps/plugin-dialog';
 
+
+
 interface ModFileSelectorProps {
   value: Omit<IModFile, 'id' | 'modId'>[];
   onChange: (files: Omit<IModFile, 'id' | 'modId'>[]) => void;
 }
+
 
 export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) {
   const { toast } = useToast();
@@ -28,6 +31,7 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
   useEffect(() => {
     loadCatalogFiles();
   }, []);
+    
   
   const loadCatalogFiles = async () => {
     setIsLoading(true);
@@ -61,6 +65,30 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
     onChange([...value, newFile]);
   };
   
+  const handleMoveFileToModFolder = async (path: string) => {
+    const modPath = (await gameService.getSettings()).modsDirectory;
+    const filePath = path;
+    const newPath = `${modPath}/${filePath.split(/[\\/]/).pop()}`;
+    console.log('Moving file to mod folder:', newPath);
+    try {
+      const result = await gameService.moveFile(filePath, newPath);
+      console.log('File moved successfully:', result);
+      toast({
+        title: 'Success',
+        description: 'File moved to mod folder successfully',
+        variant: 'default',
+      });
+    } catch (error) {
+      console.error('Failed to move file:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to move file to mod folder',
+        variant: 'destructive',
+      });
+    }
+    return newPath;
+  };
+
   const handleRemoveFile = (index: number) => {
     // Remove file at the given index
     const newFiles = [...value];
@@ -110,9 +138,9 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
   
   const handleBrowseFile = async (index: number) => {
     try {
-      // Use the `open` function from @tauri-apps/plugin-dialog
+      console.log('Opening file dialog...');
       const filePath = await open({
-        multiple: false, // Allow only a single file to be selected
+        multiple: false,
         filters: [
           { name: 'DOOM Files', extensions: ['wad', 'pk3', 'ipk3', 'deh', 'bex', 'zip'] }
         ]
@@ -120,40 +148,44 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
 
       // Check if a file was selected
       if (filePath) {
-        const fileName = filePath.split(/[\\/]/).pop() || filePath;
+        const fileName = filePath.split(/[\\/]/).pop() || 'No file selected';
+        const newFilePath = await handleMoveFileToModFolder(filePath);
+        console.log('New file path:', newFilePath);
+        console.log('Selected file:', fileName);
+        // Update the file path and name
 
         // Update the file path
-        handleUpdateFile(index, 'filePath', filePath);
+        handleUpdateFile(index, 'filePath', newFilePath);
 
         // If the name is empty, update it with the file name
         if (!value[index].name) {
           handleUpdateFile(index, 'name', fileName);
         }
+      } else {
+        console.log('No file selected');
       }
     } catch (error) {
       console.error('Failed to open file dialog:', error);
       toast({
         title: 'Error',
-        description: 'Failed to open file dialog',
+        description: error.message || 'Failed to open file dialog',
         variant: 'destructive',
       });
     }
   };
-  
+
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Mod Files</h3>
-        <Button 
-          variant="outline" 
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Mod Files</h2>
+        <Button
           size="sm"
+          variant={'outline'}
           onClick={handleAddFile}
           className="border-[#262626]"
-          type="button"
-        >
-          <PlusIcon className="h-4 w-4 mr-1" />
-          Add File
-        </Button>
+          type="button" >
+            <PlusIcon className="h-4 w-4 mr-1" />
+            Add file</Button>
       </div>
       
       {value.length === 0 ? (

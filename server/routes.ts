@@ -18,6 +18,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(versions); // Ensure this sends the array directly
   });
 
+
+
+  // === Move the mod file to the mod directory set in settings ===
+  app.post("/api/move-file", async (req, res) => {
+    const { filePath, newPath } = req.body;
+    if (!filePath || !newPath) {
+      return res.status(400).json({ message: "Missing file path or new path" });
+    }
+
+    try {
+      const returnPath = await storage.moveFile(filePath, newPath);
+      res.json({ message: returnPath });
+    } catch (error) {
+      console.error("Error moving file:", error);
+      res.status(500).json({ message: "Failed to move file" });
+    }
+  });
+
   app.get("/api/versions/:slug", async (req, res) => {
     const version = await storage.getDoomVersionBySlug(req.params.slug);
     if (!version) {
