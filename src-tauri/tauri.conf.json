@@ -15,7 +15,8 @@
         "resizable": true,
         "fullscreen": false,
         "decorations": true,
-        "url": "http://localhost:7666"
+        "url": "tauri://localhost/",
+        "devtools": true
       }
     ],
     "security": {

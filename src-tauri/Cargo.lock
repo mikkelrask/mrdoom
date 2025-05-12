@@ -2043,6 +2043,7 @@ dependencies = [
 name = "mrdoom"
 version = "0.1.1"
 dependencies = [
+ "http",
  "log",
  "serde",
  "serde_json",
