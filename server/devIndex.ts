@@ -109,7 +109,7 @@ export async function launchMod(modId: number) {
   console.log("Starting Vite server...");
   await setupVite(expressApp, server);
 
-  const port = 5000;
+  const port = 7666;
   server.listen(
     {
       port,

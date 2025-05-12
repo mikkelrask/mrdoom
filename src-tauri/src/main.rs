@@ -41,7 +41,6 @@ fn wait_for_server(host: &str, port: u16, timeout_secs: u64, retry_interval_ms: 
         }
         thread::sleep(Duration::from_millis(retry_interval_ms));
     }
-
     false
 }
 
@@ -51,15 +50,15 @@ fn custom_scheme_handler<R: Runtime>(
     request: TauriRequest<Vec<u8>>,
 ) -> Result<HttpResponse<Vec<u8>>, Box<dyn std::error::Error>> {
     let uri = request.uri().to_string();
-    println!("Received request for custom protocol: {}", uri);
+    //println!("Received request for custom protocol: {}", uri);
 
     let target_url = uri.replace("tauri://localhost", "http://localhost:7666");
-    println!("Proxying request to target URL: {}", target_url);
+    //println!("Proxying request to target URL: {}", target_url);
 
-    println!("Attempting to connect to Node.js server at localhost:7666...");
+    //println!("Attempting to connect to Node.js server at localhost:7666...");
     match TcpStream::connect("localhost:7666") {
         Ok(mut stream) => {
-            println!("Successfully connected to Node.js server.");
+     //       println!("Successfully connected to Node.js server.");
 
             let mut http_request = format!(
                 "{} {} HTTP/1.1\r\nHost: localhost:7666\r\n",
@@ -73,11 +72,11 @@ fn custom_scheme_handler<R: Runtime>(
 
             http_request.push_str("\r\n");
 
-            println!("Constructed HTTP request:\n{}", http_request);
+        //    println!("Constructed HTTP request:\n{}", http_request);
 
             let body_ref: &Vec<u8> = request.body();
             if !body_ref.is_empty() {
-                println!("Request has a body. Attempting to write body to Node.js server.");
+         //       println!("Request has a body. Attempting to write body to Node.js server.");
                  if let Err(e) = stream.write_all(body_ref) {
                     eprintln!("Error writing body to Node.js server: {:?}", e);
                     return Ok(HttpResponseBuilder::new()
@@ -85,10 +84,10 @@ fn custom_scheme_handler<R: Runtime>(
                         .body(b"Error sending request body to server".to_vec())
                         .unwrap());
                 }
-                 println!("Successfully wrote body to Node.js server.");
+           //      println!("Successfully wrote body to Node.js server.");
             }
 
-            println!("Attempting to write HTTP request headers to Node.js server.");
+            //println!("Attempting to write HTTP request headers to Node.js server.");
             if let Err(e) = stream.write_all(http_request.as_bytes()) {
                 eprintln!("Error writing headers to Node.js server: {:?}", e);
                 return Ok(HttpResponseBuilder::new()
@@ -96,12 +95,12 @@ fn custom_scheme_handler<R: Runtime>(
                     .body(b"Error sending request to server".to_vec())
                     .unwrap());
             }
-            println!("Successfully wrote HTTP request headers to Node.js server.");
+           // println!("Successfully wrote HTTP request headers to Node.js server.");
 
             // Use a BufReader for more efficient line reading
             let mut reader = std::io::BufReader::new(stream);
             let mut status_line = String::new();
-            println!("Attempting to read status line from response...");
+            //println!("Attempting to read status line from response...");
             if let Err(e) = reader.read_line(&mut status_line) {
                 eprintln!("Error reading status line from Node.js server: {:?}", e);
                 return Ok(HttpResponseBuilder::new()
@@ -109,19 +108,19 @@ fn custom_scheme_handler<R: Runtime>(
                     .body(b"Error parsing status line from server response".to_vec())
                     .unwrap());
             }
-            println!("Read status line: {}", status_line.trim());
+           // println!("Read status line: {}", status_line.trim());
 
             let status_code_u16 = if status_line.starts_with("HTTP/1.1 ") {
                 status_line.split_whitespace().nth(1).unwrap_or("500").parse::<u16>().unwrap_or(500)
             } else {
                 500
             };
-            println!("Parsed status code: {}", status_code_u16);
+            //println!("Parsed status code: {}", status_code_u16);
             let status = StatusCode::from_u16(status_code_u16)?;
 
             let mut headers = HashMap::<String, String>::new();
             let mut header_line = String::new();
-            println!("Attempting to read headers from response...");
+            //println!("Attempting to read headers from response...");
             while reader.read_line(&mut header_line).unwrap() > 2 { // Read until CRLFCRLF
                 if let Some((name, value)) = header_line.split_once(':') {
                      // Store header values as bytes if needed, but String is fine for basic cases
@@ -132,8 +131,8 @@ fn custom_scheme_handler<R: Runtime>(
                 }
                 header_line.clear();
             }
-            println!("Finished reading headers. Parsed {} headers.", headers.len());
-            println!("Parsed headers: {:?}", headers);
+            //println!("Finished reading headers. Parsed {} headers.", headers.len());
+            //println!("Parsed headers: {:?}", headers);
 
             let mut body = Vec::new();
             // Check for Content-Length header
@@ -170,7 +169,7 @@ fn custom_scheme_handler<R: Runtime>(
                           .body(b"Error reading response body (no Content-Length)".to_vec())
                           .unwrap());
                  }
-                  println!("Successfully read body with read_to_end. Body size: {}", body.len());
+             //     println!("Successfully read body with read_to_end. Body size: {}", body.len());
             }
 
 
@@ -193,7 +192,7 @@ fn custom_scheme_handler<R: Runtime>(
             let http_response = http_response_builder.body(body)?;
 
 
-            println!("Returning response with status {} and body size {}", status_code_u16, http_response.body().len());
+            //println!("Returning response with status {} and body size {}", status_code_u16, http_response.body().len());
 
 
             Ok(http_response)

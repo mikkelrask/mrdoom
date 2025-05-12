@@ -153,12 +153,17 @@ export async function getModFileCatalog(): Promise<any[]> {
 export async function moveFile(filePath: string, newPath: string): Promise<void> {
   const fileName = filePath.split(/[\\/]/).pop() || filePath;
   const pathWithoutFileName = filePath.replace(fileName, '');
-  const finalPath = newPath+'/files/'+fileName;
+  const finalPath = newPath+"/files/"+fileName;
   try {
     console.log('[DEBUG] Moving file from', filePath, 'to', finalPath);
     // if filePath is a zip file, extract it to the new path
         
-    await fs.copyFileSync(filePath, finalPath);
+    await fs.copyFile(filePath, finalPath, (err) => {
+      if (err) {
+        console.log("Error: ", err );
+        return err;
+      }
+    });
     console.log('[DEBUG] File moved successfully');
   } catch (error: any) {
     console.error('Error moving file:', error);

@@ -4,7 +4,8 @@
   "version": "0.1.1",
   "identifier": "xyz.raske.mrdoom",
   "build": {
-    "devUrl": "http://localhost:7666"
+    "devUrl": "http://localhost:7666",
+    "beforeDevCommand": "NODE_ENV=development tsx server/devIndex.ts"
   },
   "app": {
     "windows": [

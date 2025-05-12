@@ -69,7 +69,7 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
     const modPath = (await gameService.getSettings()).modsDirectory;
     const filePath = path;
     const newPath = `${modPath}/${filePath.split(/[\\/]/).pop()}`;
-    console.log('Moving file to mod folder:', newPath);
+    console.log(`Moving file (${filePath}) to mod folder: ${newPath}`);
     try {
       const result = await gameService.moveFile(filePath, newPath);
       console.log('File moved successfully:', result);

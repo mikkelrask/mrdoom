@@ -92,7 +92,7 @@ export function setupApiRoutes(app: express.Express): void {
       res.status(500).json({ error: 'Failed to get doom versions' });
     }
   });
-  
+
   router.get('/versions/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);
