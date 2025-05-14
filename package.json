@@ -70,7 +70,6 @@
     "recharts": "^2.15.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "tauri": "link:@tauri-apps/api/tauri",
     "vaul": "^1.1.2",
     "vite": "5.4.14",
     "wouter": "^3.3.5",
