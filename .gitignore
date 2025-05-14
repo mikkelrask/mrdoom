@@ -8,3 +8,5 @@ vite.config.ts.*
 src-tauri/resources/
 src-tauri/target/
 node
+client/src/components/example.tsx
+src-tauri/permissions.md

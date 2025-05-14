@@ -1,7 +1,8 @@
-import fs from 'fs-extra';
+import * as fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
 import { IAppSettings, IDoomVersion, IMod, IModFile } from '../shared/schema';
+import { error } from 'console';
 
 // Define storage paths (Aligned with local-structure.txt)
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'mrdoom');
@@ -152,22 +153,19 @@ export async function getModFileCatalog(): Promise<any[]> {
 // Move a file to a new path
 export async function moveFile(filePath: string, newPath: string): Promise<void> {
   const fileName = filePath.split(/[\\/]/).pop() || filePath;
-  const pathWithoutFileName = filePath.replace(fileName, '');
-  const finalPath = newPath+"/files/"+fileName;
   try {
-    console.log('[DEBUG] Moving file from', filePath, 'to', finalPath);
+    console.log('[DEBUG] Moving file from', filePath, 'to', newPath);
     // if filePath is a zip file, extract it to the new path
-        
-    await fs.copyFile(filePath, finalPath, (err) => {
+    await fs.copyFile(filePath, newPath, (err) => {
       if (err) {
-        console.log("Error: ", err );
-        return err;
+        console.error("Error: ", err)
+      }else {
+        console.log("Moved file ..")
       }
     });
-    console.log('[DEBUG] File moved successfully');
   } catch (error: any) {
-    console.error('Error moving file:', error);
-    throw new Error(`Failed to move file: ${error.message}`);
+      console.error('Error moving file:', error);
+      throw new Error(`Failed to move file: ${error}`);
   }
 }
 

@@ -113,17 +113,17 @@ export const gameService = {
   },
   
   // Move file 
-  async moveFile(filePath: string, newPath: string): Promise<void> {
+  async moveFile(filePath: string, newPath: string): Promise<{ success: boolean, message: string }> {
     const response = await fetch('/api/move-file', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filePath, newPath })
     });
-    
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(`Failed to move file: ${errorData.error || response.statusText}`);
     }
+    return response.json();
   },  
 
   // Settings operations

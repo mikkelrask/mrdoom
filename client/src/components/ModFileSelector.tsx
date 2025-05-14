@@ -14,13 +14,10 @@ import type { IModFile } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
 import { open } from '@tauri-apps/plugin-dialog';
 
-
-
 interface ModFileSelectorProps {
   value: Omit<IModFile, 'id' | 'modId'>[];
   onChange: (files: Omit<IModFile, 'id' | 'modId'>[]) => void;
 }
-
 
 export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) {
   const { toast } = useToast();
@@ -32,7 +29,6 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
     loadCatalogFiles();
   }, []);
     
-  
   const loadCatalogFiles = async () => {
     setIsLoading(true);
     try {
@@ -58,7 +54,7 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
       name: '',
       filePath: '',
       fileType: 'WAD',
-      loadOrder: value.length,
+      loadOrder: value.length+1,
       isRequired: true,
       fileName: '', // Ensure fileName is present
     };
@@ -68,7 +64,7 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
   const handleMoveFileToModFolder = async (path: string) => {
     const modPath = (await gameService.getSettings()).modsDirectory;
     const filePath = path;
-    const newPath = `${modPath}/${filePath.split(/[\\/]/).pop()}`;
+    const newPath = `${modPath}/files/${filePath.split(/[\\/]/).pop()}`;
     console.log(`Moving file (${filePath}) to mod folder: ${newPath}`);
     try {
       const result = await gameService.moveFile(filePath, newPath);
@@ -111,6 +107,7 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
       [field]: newValue,
       // Always set fileName from name or filePath
       fileName: field === 'name' ? newValue : (newFiles[index].name || (newFiles[index].filePath ? newFiles[index].filePath.split(/[\\/]/).pop() : '')),
+      filePath: field === 'filePath' ? newValue : (newFiles[index].filePath || (newFiles[index].filePath ? newFiles[index].filePath : '')),
       // Always set isRequired to true if undefined
       isRequired: newFiles[index].isRequired !== undefined ? newFiles[index].isRequired : true,
     };
@@ -138,7 +135,6 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
   
   const handleBrowseFile = async (index: number) => {
     try {
-      console.log('Opening file dialog...');
       const filePath = await open({
         multiple: false,
         filters: [
@@ -150,21 +146,19 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
       if (filePath) {
         const fileName = filePath.split(/[\\/]/).pop() || 'No file selected';
         const newFilePath = await handleMoveFileToModFolder(filePath);
-        console.log('New file path:', newFilePath);
-        console.log('Selected file:', fileName);
-        // Update the file path and name
-
-        // Update the file path
-        handleUpdateFile(index, 'filePath', newFilePath);
-
+        console.log('newFilePath: ', newFilePath);
+        console.log('filePath: ', filePath);
+        console.log(value[index]);
         // If the name is empty, update it with the file name
         if (!value[index].name) {
+          handleUpdateFile(index, 'filePath', newFilePath);
+          console.log(value[index].filePath)
           handleUpdateFile(index, 'name', fileName);
         }
       } else {
         console.log('No file selected');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to open file dialog:', error);
       toast({
         title: 'Error',
