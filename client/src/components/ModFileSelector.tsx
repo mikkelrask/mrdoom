@@ -114,6 +114,24 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
     onChange(newFiles);
   };
   
+  const handleUpdateMultipleFields = (index: number, updates: Partial<Omit<IModFile, 'id' | 'modId'>>) => {
+    const newFiles = [...value];
+    newFiles[index] = {
+      ...newFiles[index],
+      ...updates,
+      // Always set isRequired to true if undefined
+      isRequired: newFiles[index].isRequired !== undefined ? newFiles[index].isRequired : true,
+    };
+    
+    // Make sure fileName is always set
+    if (!newFiles[index].fileName) {
+      newFiles[index].fileName = newFiles[index].name || 
+        (newFiles[index].filePath ? newFiles[index].filePath.split(/[\\/]/).pop() || '' : '');
+    }
+    
+    onChange(newFiles);
+  };
+  
   const handleSelectCatalogFile = (index: number, catalogFileId: number) => {
     // Find the catalog file
     const catalogFile = catalogFiles.find(f => f.id === parseInt(catalogFileId + '', 10));
@@ -135,26 +153,43 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
   
   const handleBrowseFile = async (index: number) => {
     try {
-      const filePath = await open({
+      const selectedFilePath = await open({
         multiple: false,
         filters: [
           { name: 'DOOM Files', extensions: ['wad', 'pk3', 'ipk3', 'deh', 'bex', 'zip'] }
         ]
       });
 
-      // Check if a file was selected
-      if (filePath) {
-        const fileName = filePath.split(/[\\/]/).pop() || 'No file selected';
-        const newFilePath = await handleMoveFileToModFolder(filePath);
-        console.log('newFilePath: ', newFilePath);
-        console.log('filePath: ', filePath);
-        console.log(value[index]);
-        // If the name is empty, update it with the file name
-        if (!value[index].name) {
-          handleUpdateFile(index, 'filePath', newFilePath);
-          console.log(value[index].filePath)
-          handleUpdateFile(index, 'name', fileName);
-        }
+      // Check if a file was selected (and ensure it's a string)
+      if (selectedFilePath && typeof selectedFilePath === 'string') {
+        // Extract filename from path
+        const fileName = selectedFilePath.split(/[\\/]/).pop() || 'No file selected';
+        
+        // Move the file to mod folder
+        const newFilePath = await handleMoveFileToModFolder(selectedFilePath);
+        
+        console.log('Selected file:', selectedFilePath);
+        console.log('New file path:', newFilePath);
+        console.log('File name:', fileName);
+        
+        // Create a completely new files array to ensure React detects the change
+        const newFiles = [...value];
+        newFiles[index] = {
+          ...newFiles[index],
+          filePath: newFilePath,
+          fileName: fileName,
+          // Only update name if it was empty
+          name: !newFiles[index].name ? fileName : newFiles[index].name,
+          // Ensure other required fields
+          isRequired: newFiles[index].isRequired !== undefined ? newFiles[index].isRequired : true,
+          fileType: newFiles[index].fileType || 'WAD',
+          loadOrder: newFiles[index].loadOrder ?? index
+        };
+        
+        // Call onChange with the new array
+        console.log('Updating files with:', newFiles);
+        onChange(newFiles);
+        
       } else {
         console.log('No file selected');
       }
