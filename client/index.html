@@ -3,6 +3,50 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+     <script>
+      // This script must run before anything else
+      (function() {
+        console.log('Early Tauri detection script running...');
+        
+        // Create a global promise that will resolve when Tauri is ready
+        window.__TAURI_READY__ = new Promise((resolve) => {
+          let attempts = 0;
+          const maxAttempts = 20; // Try for ~2 seconds
+          
+          function checkForTauri() {
+            attempts++;
+            
+            // Check if Tauri IPC is available
+            if (window.__TAURI_IPC__) {
+              console.log('Tauri IPC detected early!');
+              // Give a little time for plugins to initialize
+              setTimeout(() => {
+                console.log('Tauri ready state resolved!');
+                resolve(true);
+              }, 100);
+              return;
+            }
+            
+            if (attempts >= maxAttempts) {
+              console.warn('Failed to detect Tauri IPC after multiple attempts');
+              resolve(false);
+              return;
+            }
+            
+            // Wait and try again
+            setTimeout(checkForTauri, 100);
+          }
+          
+          // Start checking right away
+          checkForTauri();
+        });
+        
+        // Create a helper method for component use
+        window.isTauriAvailable = async function() {
+          return window.__TAURI_READY__;
+        };
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

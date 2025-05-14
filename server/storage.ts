@@ -1,7 +1,8 @@
-import fs from 'fs-extra';
+import * as fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
 import { IAppSettings, IDoomVersion, IMod, IModFile } from '../shared/schema';
+import { error } from 'console';
 
 // Define storage paths (Aligned with local-structure.txt)
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'mrdoom');
@@ -16,6 +17,7 @@ const DEFAULT_SETTINGS: IAppSettings = {
   gzDoomPath: 'gzdoom', // Default to assuming gzdoom is in PATH
   theme: 'dark',
   savegamesPath: '~/.config/gzdoom/saves', // Add empty string defaults for optional properties
+  modsDirectory: '~/.config/mrdoom/mods',
   screenshotsPath: '~/Pictures/MRDoom/screenshots',
   defaultSourcePort: 'GZDoom'
 };
@@ -145,6 +147,25 @@ export async function getModFileCatalog(): Promise<any[]> {
   } catch (error) {
     console.error('storage.ts: Error reading modFileCatalogue.json:', error);
     return [];
+  }
+}
+
+// Move a file to a new path
+export async function moveFile(filePath: string, newPath: string): Promise<void> {
+  const fileName = filePath.split(/[\\/]/).pop() || filePath;
+  try {
+    console.log('[DEBUG] Moving file from', filePath, 'to', newPath);
+    // if filePath is a zip file, extract it to the new path
+    await fs.copyFile(filePath, newPath, (err) => {
+      if (err) {
+        console.error("Error: ", err)
+      }else {
+        console.log("Moved file ..")
+      }
+    });
+  } catch (error: any) {
+      console.error('Error moving file:', error);
+      throw new Error(`Failed to move file: ${error}`);
   }
 }
 

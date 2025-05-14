@@ -1,0 +1,6 @@
+[[permission]]
+identifier = "dialog:allow-open"
+description = "Allows the use of the dialog.open command."
+commands.allow = [
+    "dialog.open"
+]

@@ -1,10 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { gameService } from "./services/gameService";
-import { moddbService } from "./services/moddbService";
 import * as storage from "./storage";
+import * as express from "express";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.use(express.json());
   const httpServer = createServer(app);
 
   // Initialize services and load mods from config
@@ -16,6 +17,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/versions", async (req, res) => {
     const versions = await storage.getDoomVersions();
     res.json(versions); // Ensure this sends the array directly
+  });
+
+
+
+  // === Move the mod file to the mod directory set in settings ===
+  app.post("/api/move-file", async (req, res) => {
+    console.log("POST /api/move-file received with body:", req.body);
+    const { filePath, newPath } = req.body;
+    if (!filePath || !newPath) {
+      return res.status(400).json({ message: "Missing file path or new path" });
+    }
+
+    try {
+      const returnPath = await storage.moveFile(filePath, newPath);
+      res.json({ message: returnPath });
+    } catch (error) {
+      console.error("Error moving file:", error);
+      res.status(500).json({ message: "Failed to move file" });
+    }
   });
 
   app.get("/api/versions/:slug", async (req, res) => {

@@ -1,10 +1,11 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "mrdoom",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "identifier": "xyz.raske.mrdoom",
   "build": {
-    "devUrl": "http://localhost:7666"
+    "devUrl": "http://localhost:7666",
+    "beforeDevCommand": "NODE_ENV=development tsx server/devIndex.ts"
   },
   "app": {
     "windows": [
@@ -15,7 +16,8 @@
         "resizable": true,
         "fullscreen": false,
         "decorations": true,
-        "url": "http://localhost:7666"
+        "url": "tauri://localhost/",
+        "devtools": true
       }
     ],
     "security": {

@@ -12,6 +12,7 @@ import { FolderOpenIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { gameService } from '@/lib/gameService';
 import type { IModFile } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
+import { open } from '@tauri-apps/plugin-dialog';
 
 interface ModFileSelectorProps {
   value: Omit<IModFile, 'id' | 'modId'>[];
@@ -27,7 +28,7 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
   useEffect(() => {
     loadCatalogFiles();
   }, []);
-  
+    
   const loadCatalogFiles = async () => {
     setIsLoading(true);
     try {
@@ -53,13 +54,37 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
       name: '',
       filePath: '',
       fileType: 'WAD',
-      loadOrder: value.length,
+      loadOrder: value.length+1,
       isRequired: true,
       fileName: '', // Ensure fileName is present
     };
     onChange([...value, newFile]);
   };
   
+  const handleMoveFileToModFolder = async (path: string) => {
+    const modPath = (await gameService.getSettings()).modsDirectory;
+    const filePath = path;
+    const newPath = `${modPath}/files/${filePath.split(/[\\/]/).pop()}`;
+    console.log(`Moving file (${filePath}) to mod folder: ${newPath}`);
+    try {
+      const result = await gameService.moveFile(filePath, newPath);
+      console.log('File moved successfully:', result);
+      toast({
+        title: 'Success',
+        description: 'File moved to mod folder successfully',
+        variant: 'default',
+      });
+    } catch (error) {
+      console.error('Failed to move file:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to move file to mod folder',
+        variant: 'destructive',
+      });
+    }
+    return newPath;
+  };
+
   const handleRemoveFile = (index: number) => {
     // Remove file at the given index
     const newFiles = [...value];
@@ -82,9 +107,28 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
       [field]: newValue,
       // Always set fileName from name or filePath
       fileName: field === 'name' ? newValue : (newFiles[index].name || (newFiles[index].filePath ? newFiles[index].filePath.split(/[\\/]/).pop() : '')),
+      filePath: field === 'filePath' ? newValue : (newFiles[index].filePath || (newFiles[index].filePath ? newFiles[index].filePath : '')),
       // Always set isRequired to true if undefined
       isRequired: newFiles[index].isRequired !== undefined ? newFiles[index].isRequired : true,
     };
+    onChange(newFiles);
+  };
+  
+  const handleUpdateMultipleFields = (index: number, updates: Partial<Omit<IModFile, 'id' | 'modId'>>) => {
+    const newFiles = [...value];
+    newFiles[index] = {
+      ...newFiles[index],
+      ...updates,
+      // Always set isRequired to true if undefined
+      isRequired: newFiles[index].isRequired !== undefined ? newFiles[index].isRequired : true,
+    };
+    
+    // Make sure fileName is always set
+    if (!newFiles[index].fileName) {
+      newFiles[index].fileName = newFiles[index].name || 
+        (newFiles[index].filePath ? newFiles[index].filePath.split(/[\\/]/).pop() || '' : '');
+    }
+    
     onChange(newFiles);
   };
   
@@ -109,49 +153,68 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
   
   const handleBrowseFile = async (index: number) => {
     try {
-        const result = await gameService.showOpenDialog({
-            properties: ['openFile'],
-            filters: [
-                { name: 'DOOM Files', extensions: ['wad', 'pk3', 'ipk3', 'deh', 'bex', 'zip'] }
-            ]
-        });
+      const selectedFilePath = await open({
+        multiple: false,
+        filters: [
+          { name: 'DOOM Files', extensions: ['wad', 'pk3', 'ipk3', 'deh', 'bex', 'zip'] }
+        ]
+      });
 
-        if (!result.canceled && result.filePaths.length > 0) {
-            const filePath = result.filePaths[0];
-            const fileName = filePath.split(/[\\/]/).pop() || filePath;
-
-            // Update the file path
-            handleUpdateFile(index, 'filePath', filePath);
-
-            // If the name is empty, update it with the file name
-            if (!value[index].name) {
-                handleUpdateFile(index, 'name', fileName);
-            }
-        }
-    } catch (error) {
-        console.error('Failed to open file dialog:', error);
-        toast({
-            title: 'Error',
-            description: 'Failed to open file dialog',
-            variant: 'destructive',
-        });
+      // Check if a file was selected (and ensure it's a string)
+      if (selectedFilePath && typeof selectedFilePath === 'string') {
+        // Extract filename from path
+        const fileName = selectedFilePath.split(/[\\/]/).pop() || 'No file selected';
+        
+        // Move the file to mod folder
+        const newFilePath = await handleMoveFileToModFolder(selectedFilePath);
+        
+        console.log('Selected file:', selectedFilePath);
+        console.log('New file path:', newFilePath);
+        console.log('File name:', fileName);
+        
+        // Create a completely new files array to ensure React detects the change
+        const newFiles = [...value];
+        newFiles[index] = {
+          ...newFiles[index],
+          filePath: newFilePath,
+          fileName: fileName,
+          // Only update name if it was empty
+          name: !newFiles[index].name ? fileName : newFiles[index].name,
+          // Ensure other required fields
+          isRequired: newFiles[index].isRequired !== undefined ? newFiles[index].isRequired : true,
+          fileType: newFiles[index].fileType || 'WAD',
+          loadOrder: newFiles[index].loadOrder ?? index
+        };
+        
+        // Call onChange with the new array
+        console.log('Updating files with:', newFiles);
+        onChange(newFiles);
+        
+      } else {
+        console.log('No file selected');
+      }
+    } catch (error: any) {
+      console.error('Failed to open file dialog:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to open file dialog',
+        variant: 'destructive',
+      });
     }
-};
-  
+  };
+
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Mod Files</h3>
-        <Button 
-          variant="outline" 
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Mod Files</h2>
+        <Button
           size="sm"
+          variant={'outline'}
           onClick={handleAddFile}
           className="border-[#262626]"
-          type="button"
-        >
-          <PlusIcon className="h-4 w-4 mr-1" />
-          Add File
-        </Button>
+          type="button" >
+            <PlusIcon className="h-4 w-4 mr-1" />
+            Add file</Button>
       </div>
       
       {value.length === 0 ? (

@@ -1,6 +1,6 @@
 [package]
 name = "mrdoom"
-version = "0.1.1"
+version = "0.1.2"
 description = "Rip and Tear - the easy way!"
 authors = ["mikkelrask"]
 license = "beer-ware rev42"
@@ -17,4 +17,5 @@ serde_json = "1.0"
 log = "0.4"
 tauri = { version = "2.5.0", features = [] }
 tauri-plugin-log = "2.0.0-rc.4"
-
+tauri-plugin-dialog = "2"
+http = "1.3.1"
