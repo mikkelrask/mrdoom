@@ -50,15 +50,15 @@ fn custom_scheme_handler<R: Runtime>(
     request: TauriRequest<Vec<u8>>,
 ) -> Result<HttpResponse<Vec<u8>>, Box<dyn std::error::Error>> {
     let uri = request.uri().to_string();
-    //println!("Received request for custom protocol: {}", uri);
+    println!("Received request for custom protocol: {}", uri);
 
     let target_url = uri.replace("tauri://localhost", "http://localhost:7666");
-    //println!("Proxying request to target URL: {}", target_url);
+    println!("Proxying request to target URL: {}", target_url);
 
-    //println!("Attempting to connect to Node.js server at localhost:7666...");
+    println!("Attempting to connect to Node.js server at localhost:7666...");
     match TcpStream::connect("localhost:7666") {
         Ok(mut stream) => {
-     //       println!("Successfully connected to Node.js server.");
+            println!("Successfully connected to Node.js server.");
 
             let mut http_request = format!(
                 "{} {} HTTP/1.1\r\nHost: localhost:7666\r\n",
@@ -66,28 +66,26 @@ fn custom_scheme_handler<R: Runtime>(
                 target_url
             );
 
+            // Add headers from the original request
             for (name, value) in request.headers().iter() {
                 http_request.push_str(&format!("{}: {}\r\n", name, String::from_utf8_lossy(value.as_bytes())));
             }
 
-            http_request.push_str("\r\n");
-
-        //    println!("Constructed HTTP request:\n{}", http_request);
-
+            // Add Content-Length header
             let body_ref: &Vec<u8> = request.body();
-            if !body_ref.is_empty() {
-         //       println!("Request has a body. Attempting to write body to Node.js server.");
-                 if let Err(e) = stream.write_all(body_ref) {
-                    eprintln!("Error writing body to Node.js server: {:?}", e);
-                    return Ok(HttpResponseBuilder::new()
-                        .status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .body(b"Error sending request body to server".to_vec())
-                        .unwrap());
-                }
-           //      println!("Successfully wrote body to Node.js server.");
+            let content_length = body_ref.len();
+            http_request.push_str(&format!("Content-Length: {}\r\n", content_length));
+
+            // Ensure Content-Type is set to application/json if not present
+            if !request.headers().contains_key("Content-Type") {
+                http_request.push_str("Content-Type: application/json\r\n");
             }
 
-            //println!("Attempting to write HTTP request headers to Node.js server.");
+            http_request.push_str("\r\n");
+
+            println!("Constructed HTTP request:\n{}", http_request);
+
+            // Write the request headers to the stream
             if let Err(e) = stream.write_all(http_request.as_bytes()) {
                 eprintln!("Error writing headers to Node.js server: {:?}", e);
                 return Ok(HttpResponseBuilder::new()
@@ -95,12 +93,25 @@ fn custom_scheme_handler<R: Runtime>(
                     .body(b"Error sending request to server".to_vec())
                     .unwrap());
             }
-           // println!("Successfully wrote HTTP request headers to Node.js server.");
+            println!("Successfully wrote HTTP request headers to Node.js server.");
+
+            // Write the request body to the stream
+            if !body_ref.is_empty() {
+                println!("Request has a body. Attempting to write body to Node.js server.");
+                if let Err(e) = stream.write_all(body_ref) {
+                    eprintln!("Error writing body to Node.js server: {:?}", e);
+                    return Ok(HttpResponseBuilder::new()
+                        .status(StatusCode::INTERNAL_SERVER_ERROR)
+                        .body(b"Error sending request body to server".to_vec())
+                        .unwrap());
+                }
+                println!("Successfully wrote body to Node.js server.");
+            }
 
             // Use a BufReader for more efficient line reading
             let mut reader = std::io::BufReader::new(stream);
             let mut status_line = String::new();
-            //println!("Attempting to read status line from response...");
+            println!("Attempting to read status line from response...");
             if let Err(e) = reader.read_line(&mut status_line) {
                 eprintln!("Error reading status line from Node.js server: {:?}", e);
                 return Ok(HttpResponseBuilder::new()
@@ -108,22 +119,21 @@ fn custom_scheme_handler<R: Runtime>(
                     .body(b"Error parsing status line from server response".to_vec())
                     .unwrap());
             }
-           // println!("Read status line: {}", status_line.trim());
+            println!("Read status line: {}", status_line.trim());
 
             let status_code_u16 = if status_line.starts_with("HTTP/1.1 ") {
                 status_line.split_whitespace().nth(1).unwrap_or("500").parse::<u16>().unwrap_or(500)
             } else {
                 500
             };
-            //println!("Parsed status code: {}", status_code_u16);
+            println!("Parsed status code: {}", status_code_u16);
             let status = StatusCode::from_u16(status_code_u16)?;
 
             let mut headers = HashMap::<String, String>::new();
             let mut header_line = String::new();
-            //println!("Attempting to read headers from response...");
+            println!("Attempting to read headers from response...");
             while reader.read_line(&mut header_line).unwrap() > 2 { // Read until CRLFCRLF
                 if let Some((name, value)) = header_line.split_once(':') {
-                     // Store header values as bytes if needed, but String is fine for basic cases
                     headers.insert(
                         name.trim().to_lowercase().to_string(),
                         value.trim().to_string(),
@@ -131,8 +141,8 @@ fn custom_scheme_handler<R: Runtime>(
                 }
                 header_line.clear();
             }
-            //println!("Finished reading headers. Parsed {} headers.", headers.len());
-            //println!("Parsed headers: {:?}", headers);
+            println!("Finished reading headers. Parsed {} headers.", headers.len());
+            println!("Parsed headers: {:?}", headers);
 
             let mut body = Vec::new();
             // Check for Content-Length header
@@ -142,62 +152,50 @@ fn custom_scheme_handler<R: Runtime>(
                     body.reserve(content_length); // Reserve space for the body
                     let mut body_reader = reader.take(content_length as u64); // Read exactly content_length bytes
                     if let Err(e) = body_reader.read_to_end(&mut body) {
-                         eprintln!("Error reading response body with Content-Length: {:?}", e);
-                         return Ok(HttpResponseBuilder::new()
-                             .status(StatusCode::INTERNAL_SERVER_ERROR)
-                             .body(b"Error reading response body".to_vec())
-                             .unwrap());
+                        eprintln!("Error reading response body with Content-Length: {:?}", e);
+                        return Ok(HttpResponseBuilder::new()
+                            .status(StatusCode::INTERNAL_SERVER_ERROR)
+                            .body(b"Error reading response body".to_vec())
+                            .unwrap());
                     }
-                     println!("Successfully read body based on Content-Length. Body size: {}", body.len());
+                    println!("Successfully read body based on Content-Length. Body size: {}", body.len());
                 } else {
-                     eprintln!("Error parsing Content-Length header: {}", content_length_str);
-                      // Handle cases where Content-Length is present but invalid
-                     return Ok(HttpResponseBuilder::new()
-                         .status(StatusCode::INTERNAL_SERVER_ERROR)
-                         .body(b"Invalid Content-Length header".to_vec())
-                         .unwrap());
+                    eprintln!("Error parsing Content-Length header: {}", content_length_str);
+                    return Ok(HttpResponseBuilder::new()
+                        .status(StatusCode::INTERNAL_SERVER_ERROR)
+                        .body(b"Invalid Content-Length header".to_vec())
+                        .unwrap());
                 }
             } else {
-                 // If Content-Length is not present, you might need a different strategy
-                 // For now, we'll log a warning and continue with read_to_end (which was slow)
-                 // A more robust solution would handle Transfer-Encoding or read until connection close
-                 eprintln!("Warning: Content-Length header not found. Falling back to read_to_end.");
-                 if let Err(e) = reader.read_to_end(&mut body) {
-                     eprintln!("Error reading response body with read_to_end: {:?}", e);
-                      return Ok(HttpResponseBuilder::new()
-                          .status(StatusCode::INTERNAL_SERVER_ERROR)
-                          .body(b"Error reading response body (no Content-Length)".to_vec())
-                          .unwrap());
-                 }
-             //     println!("Successfully read body with read_to_end. Body size: {}", body.len());
+                eprintln!("Warning: Content-Length header not found. Falling back to read_to_end.");
+                if let Err(e) = reader.read_to_end(&mut body) {
+                    eprintln!("Error reading response body with read_to_end: {:?}", e);
+                    return Ok(HttpResponseBuilder::new()
+                        .status(StatusCode::INTERNAL_SERVER_ERROR)
+                        .body(b"Error reading response body (no Content-Length)".to_vec())
+                        .unwrap());
+                }
+                println!("Successfully read body with read_to_end. Body size: {}", body.len());
             }
-
 
             // Build the http::Response
             let mut http_response_builder = HttpResponseBuilder::new().status(status);
 
             // Add headers to the builder
             for (name, value) in headers.iter() {
-                 // Use the http crate's header method, converting String to HeaderValue
                 if let Ok(header_value) = HeaderValue::from_str(value) {
-                     http_response_builder = http_response_builder.header(name, header_value);
+                    http_response_builder = http_response_builder.header(name, header_value);
                 } else {
-                     eprintln!("Warning: Invalid header value for '{}': {}", name, value);
-                     // Optionally handle invalid header values, e.g., skip or return error
+                    eprintln!("Warning: Invalid header value for '{}': {}", name, value);
                 }
             }
-
 
             // Set the body and build the final http::Response
             let http_response = http_response_builder.body(body)?;
 
-
-            //println!("Returning response with status {} and body size {}", status_code_u16, http_response.body().len());
-
+            println!("Returning response with status {} and body size {}", status_code_u16, http_response.body().len());
 
             Ok(http_response)
-
-
         }
         Err(e) => {
             eprintln!("Error connecting to Node.js server: {:?}", e);
