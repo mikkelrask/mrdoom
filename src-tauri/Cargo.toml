@@ -1,5 +1,5 @@
 [package]
-name = "mrdoom"
+name = "UAC Launch Control"
 version = "0.1.2"
 description = "Rip and Tear - the easy way!"
 authors = ["mikkelrask"]

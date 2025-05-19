@@ -1,5 +1,5 @@
 {
-  "name": "mrdoom-server",
+  "name": "uac-server",
   "version": "0.1.2",
   "description": "Server-side dependencies for the MRDOOM app",
   "main": "index.ts",

@@ -165,12 +165,26 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
         // Extract filename from path
         const fileName = selectedFilePath.split(/[\\/]/).pop() || 'No file selected';
         
+        // Determine file type from extension
+        const fileExtension = fileName.split('.').pop()?.toUpperCase() || '';
+        let fileType = 'WAD'; // Default file type
+        
+        // Map common extensions to file types
+        if (['WAD'].includes(fileExtension)) {
+          fileType = 'WAD';
+        } else if (['PK3', 'IPK3', 'ZIP'].includes(fileExtension)) {
+          fileType = 'PK3';
+        } else if (['DEH', 'BEX'].includes(fileExtension)) {
+          fileType = 'DEH';
+        }
+        
         // Move the file to mod folder
         const newFilePath = await handleMoveFileToModFolder(selectedFilePath);
         
         console.log('Selected file:', selectedFilePath);
         console.log('New file path:', newFilePath);
         console.log('File name:', fileName);
+        console.log('Detected file type:', fileType);
         
         // Create a completely new files array to ensure React detects the change
         const newFiles = [...value];
@@ -178,11 +192,11 @@ export function ModFileSelector({ value = [], onChange }: ModFileSelectorProps) 
           ...newFiles[index],
           filePath: newFilePath,
           fileName: fileName,
+          fileType: fileType, // Set the detected file type
           // Only update name if it was empty
           name: !newFiles[index].name ? fileName : newFiles[index].name,
           // Ensure other required fields
           isRequired: newFiles[index].isRequired !== undefined ? newFiles[index].isRequired : true,
-          fileType: newFiles[index].fileType || 'WAD',
           loadOrder: newFiles[index].loadOrder ?? index
         };
         
